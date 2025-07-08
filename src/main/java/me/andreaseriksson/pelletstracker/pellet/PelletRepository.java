@@ -20,7 +20,7 @@ public class PelletRepository {
 
     Optional<Pellet> findById(Integer id) {
         return pellets.stream()
-                .filter(pellet -> pellet.id() == id)
+                .filter(pellet -> pellet.id().equals(id))
                 .findFirst();
     }
 
@@ -39,6 +39,7 @@ public class PelletRepository {
         pellets.removeIf(pellet -> pellet.id().equals(id));
     }
 
+    // Add two dummy entries on startup.
     @PostConstruct
     private void init() {
         pellets.add(new Pellet(
