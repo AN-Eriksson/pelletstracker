@@ -3,7 +3,6 @@ package me.andreaseriksson.pelletstracker.pellet;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +24,7 @@ public class PelletController {
     }
 
     @GetMapping("/{id}")
-    Pellet findById(@PathVariable Integer id) {
+    Pellet findById(@PathVariable String id) {
         Optional<Pellet> pellet =  pelletRepository.findById(id);
         if(pellet.isEmpty()) {
             throw new PelletNotFoundException();
@@ -37,19 +36,19 @@ public class PelletController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
     void create(@Valid @RequestBody Pellet pellet) {
-        pelletRepository.create(pellet);
+        pelletRepository.save(pellet);
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
-    void update (@Valid @RequestBody Pellet pellet, @PathVariable Integer id) {
-        pelletRepository.update(pellet, id);
+    void update(@Valid @RequestBody Pellet pellet, @PathVariable String id) {
+        pelletRepository.save(pellet);
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
-    void delete(@PathVariable Integer id) {
-        pelletRepository.delete(id);
+    void delete(@PathVariable String id) {
+        pelletRepository.deleteById(id);
     }
 
 }
