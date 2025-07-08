@@ -25,6 +25,10 @@ public class Pellet {
         this.setNumberOfSacks(numberOfSacks);
     }
 
+    public String getId() {
+        return id;
+    }
+
     public LocalDateTime getDate() {
         return date;
     }
@@ -39,5 +43,9 @@ public class Pellet {
 
     public void setNumberOfSacks(Integer numberOfSacks) {
         this.numberOfSacks = numberOfSacks;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

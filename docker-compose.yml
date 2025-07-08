@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/pelletstracker
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"

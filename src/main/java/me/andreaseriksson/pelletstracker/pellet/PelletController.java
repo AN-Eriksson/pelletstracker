@@ -42,6 +42,7 @@ public class PelletController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
     void update(@Valid @RequestBody Pellet pellet, @PathVariable String id) {
+        pellet.setId(id);
         pelletRepository.save(pellet);
     }
 
