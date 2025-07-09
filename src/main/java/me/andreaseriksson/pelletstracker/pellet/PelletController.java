@@ -35,8 +35,8 @@ public class PelletController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
-    void create(@Valid @RequestBody Pellet pellet) {
-        pelletRepository.save(pellet);
+    Pellet create(@Valid @RequestBody Pellet pellet) {
+        return pelletRepository.save(pellet);
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
