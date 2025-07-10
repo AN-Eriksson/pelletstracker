@@ -3,9 +3,10 @@ package me.andreaseriksson.pelletstracker.pellet;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PastOrPresent;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Document
 public class Pellet {
@@ -13,14 +14,15 @@ public class Pellet {
     private String id;
 
     @PastOrPresent
-    private LocalDateTime date;
+    @Indexed(unique = true)
+    private LocalDate date;
 
     @Min(1)
     private Integer numberOfSacks;
 
     public Pellet() {}
 
-    public Pellet(LocalDateTime date, Integer numberOfSacks) {
+    public Pellet(LocalDate date, Integer numberOfSacks) {
         this.setDate(date);
         this.setNumberOfSacks(numberOfSacks);
     }
@@ -29,11 +31,11 @@ public class Pellet {
         return id;
     }
 
-    public LocalDateTime getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 

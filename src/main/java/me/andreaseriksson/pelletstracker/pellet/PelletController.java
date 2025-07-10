@@ -33,10 +33,22 @@ public class PelletController {
         return pellet.get();
     }
 
+    /**
+     * Adds a new Pellet object or updates the existing if there already is one with the same date.
+     * @param pellet
+     * @return
+     */
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
-    Pellet create(@Valid @RequestBody Pellet pellet) {
-        return pelletRepository.save(pellet);
+    Pellet createOrUpdate(@Valid @RequestBody Pellet pellet) {
+        Optional<Pellet> existing = pelletRepository.findByDate(pellet.getDate());
+        if (existing.isPresent()) {
+            Pellet toUpdate = existing.get();
+            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pellet.getNumberOfSacks());
+            return pelletRepository.save(toUpdate);
+        } else {
+            return pelletRepository.save(pellet);
+        }
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
