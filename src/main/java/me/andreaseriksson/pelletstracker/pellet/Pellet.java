@@ -13,7 +13,6 @@ public class Pellet {
     @Id
     private String id;
 
-    @PastOrPresent
     @Indexed(unique = true)
     private LocalDate date;
 
