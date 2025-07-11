@@ -1,7 +1,6 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.PastOrPresent;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;

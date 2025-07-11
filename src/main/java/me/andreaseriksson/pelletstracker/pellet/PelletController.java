@@ -33,11 +33,6 @@ public class PelletController {
         return pellet.get();
     }
 
-    /**
-     * Adds a new Pellet object or updates the existing if there already is one with the same date.
-     * @param pellet
-     * @return
-     */
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
     Pellet createOrUpdate(@Valid @RequestBody Pellet pellet) {
