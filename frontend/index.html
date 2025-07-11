@@ -7,10 +7,10 @@
     <title>Pellets Tracker</title>
   </head>
   <body class="bg-gray-50">
-    <div id="app" class="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+    <div id="app" class="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">Pellets Tracker</h1>
       
-      <form id="pellet-form" class="space-y-4">
+      <form id="pellet-form" class="space-y-4 mb-8">
         <div>
           <label for="pellet-date" class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
           <input type="date" id="pellet-date" name="date" required 
@@ -28,6 +28,28 @@
           Add Pellet Record
         </button>
       </form>
+
+      <div class="border-t pt-6">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">All Entries</h2>
+        <button id="refresh-btn" 
+                class="mb-4 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+          Refresh Data
+        </button>
+        
+        <div class="overflow-x-auto">
+          <table id="pellets-table" class="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border border-gray-300 px-4 py-2 text-left">Date</th>
+                <th class="border border-gray-300 px-4 py-2 text-left">Number of Sacks</th>
+              </tr>
+            </thead>
+            <tbody id="pellets-tbody">
+              <!-- Table rows will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.js"></script>
