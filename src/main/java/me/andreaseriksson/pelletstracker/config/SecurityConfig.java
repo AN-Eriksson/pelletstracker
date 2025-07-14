@@ -72,6 +72,16 @@ public class SecurityConfig {
         return source;
     }
 
+    /**
+     * Provides an in-memory user details service for authentication.
+     * <p>
+     * - Creates a single user with username "andreas" and password "1234" (no encoding).
+     * - Assigns the "USER" role to the user.
+     * <p>
+     * <b>Note:</b> This configuration is for development/testing only and should not be used in production.
+     *
+     * @return a {@link UserDetailsService} with a single in-memory user
+     */
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails user1 = User.withUsername("andreas")

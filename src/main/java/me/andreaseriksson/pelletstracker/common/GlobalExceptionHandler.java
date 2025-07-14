@@ -9,13 +9,21 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * Global exception handler for REST controllers.
- * Catches all unhandled exceptions and returns standardized error responses.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Logger instance for this global exception handler.
+     */
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /**
+     * Handles all uncaught exceptions and returns a standardized error response.
+     *
+     * @param ex the exception that was thrown
+     * @return an ApiResponse with error status and a generic error message
+     */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<String> handleAllExceptions(Exception ex) {

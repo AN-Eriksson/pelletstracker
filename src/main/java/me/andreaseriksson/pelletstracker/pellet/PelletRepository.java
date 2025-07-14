@@ -23,5 +23,12 @@ public interface PelletRepository extends MongoRepository<PelletEntry, String> {
      */
     Optional<PelletEntry> findByDate(LocalDateTime date);
 
+    /**
+     * Finds all Pellet entries with a date between the specified start and end dates (inclusive).
+     *
+     * @param startDate the start date (inclusive)
+     * @param endDate the end date (inclusive)
+     * @return a list of PelletEntry objects within the date range
+     */
     List<PelletEntry> findByDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 }

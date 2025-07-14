@@ -118,6 +118,7 @@ public class PelletController {
      *
      * @return the total number of entries in the pellet history
      */
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping("/get-number-of-entries")
     int getNumberOfEntries() {
         List<PelletEntry> pelletEntries = pelletRepository.findAll();
@@ -135,6 +136,7 @@ public class PelletController {
      * @param year the year for which to calculate the total
      * @return the total number of sacks for the specified week and year
      */
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping("/get-total-for-week/{week}/{year}")
     ApiResponse<Integer> getTotalForWeekOfYear(@PathVariable int week, @PathVariable int year) {
         LocalDate startOfWeek = LocalDate.ofYearDay(year, 1)

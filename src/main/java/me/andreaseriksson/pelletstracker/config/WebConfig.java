@@ -6,9 +6,21 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
-// Allow CORS-requests during development to allow frontend to send requests from Vite server port 5173.
+/**
+ * Spring Web configuration.
+ * <p>
+ * Configures CORS to allow requests from the Vite development server
+ * at http://localhost:5173 during development.
+ */
 @Configuration
 public class WebConfig {
+
+    /**
+     * Configures CORS mappings to allow requests from the Vite development server
+     * at http://localhost:5173 during development.
+     *
+     * @return a {@link WebMvcConfigurer} that sets up CORS for development
+     */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
