@@ -19,5 +19,7 @@ public class PelletHistory {
         return pelletEntries.size();
     }
 
+    public double get
+
 
 }
