@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * Represents a pellet entry with a unique date and the number of sacks.
@@ -22,7 +23,7 @@ public class PelletEntry {
      * The date of the pellet entry. Must be unique.
      */
     @Indexed(unique = true)
-    private LocalDate date;
+    private LocalDateTime date;
 
     /**
      * The number of sacks for the pellet entry. Must be at least 1.
@@ -60,7 +61,7 @@ public class PelletEntry {
      *
      * @return the date
      */
-    public LocalDate getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
@@ -70,7 +71,7 @@ public class PelletEntry {
      * @param date the date to set
      */
     public void setDate(LocalDate date) {
-        this.date = date;
+        this.date = date != null ? date.atStartOfDay() : null;
     }
 
     /**

@@ -1,9 +1,11 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
+import org.springframework.cglib.core.Local;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -19,5 +21,7 @@ public interface PelletRepository extends MongoRepository<PelletEntry, String> {
      * @param date the date of the pellet entry
      * @return an Optional containing the found Pellet, or empty if not found
      */
-    Optional<PelletEntry> findByDate(LocalDate date);
+    Optional<PelletEntry> findByDate(LocalDateTime date);
+
+    List<PelletEntry> findByDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 }
