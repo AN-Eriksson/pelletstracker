@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import me.andreaseriksson.pelletstracker.common.ApiResponse;
 
 /**
  * REST controller for managing pellet entries.
@@ -135,7 +136,7 @@ public class PelletController {
      * @return the total number of sacks for the specified week and year
      */
     @GetMapping("/get-total-for-week/{week}/{year}")
-    int getEntriesBetweenDates(@PathVariable int week, @PathVariable int year) {
+    ApiResponse<Integer> getTotalForWeekOfYear(@PathVariable int week, @PathVariable int year) {
         LocalDate startOfWeek = LocalDate.ofYearDay(year, 1)
                 .with(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR, week)
                 .with(java.time.DayOfWeek.MONDAY);
@@ -149,7 +150,6 @@ public class PelletController {
             totalNumberOfSacks += entry.getNumberOfSacks();
         }
 
-        return totalNumberOfSacks;
+        return new ApiResponse<>("success", "Total sacks for the week", totalNumberOfSacks);
     }
-
 }
