@@ -2,7 +2,7 @@ import './style.css'
 
 // Wait for DOM to be loaded before attaching event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('#pellet-form').addEventListener('submit', handleFormSubmit)
+  document.querySelector('#pelletEntry-form').addEventListener('submit', handleFormSubmit)
   document.querySelector('#refresh-btn').addEventListener('click', loadAllEntries)
 
   // Set today's date as default
@@ -45,7 +45,7 @@ const sendFetch = async (date, numberOfSacks) => {
       console.log('Response:', data)
       
       // Clear the form after successful submission
-      document.querySelector('#pellet-form').reset()
+      document.querySelector('#pelletEntry-form').reset()
       setFormDateToToday()
 
       return true
@@ -80,7 +80,7 @@ const loadAllEntries = async () => {
 }
 
 const displayEntries = (entries) => {
-  const tbody = document.querySelector('#pellets-tbody')
+  const tbody = document.querySelector('#pelletEntries-tbody')
   
   // Clear existing rows
   tbody.innerHTML = ''
@@ -89,14 +89,19 @@ const displayEntries = (entries) => {
     tbody.innerHTML = '<tr><td colspan="2" class="border border-gray-300 px-4 py-2 text-center text-gray-500">No entries found</td></tr>'
     return
   }
+
+  // Sort the entries by date in descending order
+  entries.sort((a, b) => new Date(b.date) - new Date(a.date))
   
   // Add rows for each entry
   entries.forEach(entry => {
     const row = document.createElement('tr')
     row.className = 'hover:bg-gray-50'
+
+    const dateWithTimeStripped = new Date(entry.date).toISOString().split('T')[0]
     
     row.innerHTML = `
-      <td class="border border-gray-300 px-4 py-2">${entry.date}</td>
+      <td class="border border-gray-300 px-4 py-2">${dateWithTimeStripped}</td>
       <td class="border border-gray-300 px-4 py-2">${entry.numberOfSacks}</td>
     `
     
@@ -106,5 +111,5 @@ const displayEntries = (entries) => {
 
 function setFormDateToToday() {
   const today = new Date().toISOString().split('T')[0]
-  document.querySelector('#pellet-date').value = today
+  document.querySelector('#pelletEntry-date').value = today
 }
