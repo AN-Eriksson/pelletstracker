@@ -35,7 +35,7 @@ public class PelletController {
      * @return a list of all pellets
      */
     @GetMapping("")
-    List<Pellet> findAll() {
+    List<PelletEntry> findAll() {
         return this.pelletRepository.findAll();
     }
 
@@ -47,8 +47,8 @@ public class PelletController {
      * @throws PelletNotFoundException if no pellet with the given ID is found
      */
     @GetMapping("/{id}")
-    Pellet findById(@PathVariable String id) {
-        Optional<Pellet> pellet =  pelletRepository.findById(id);
+    PelletEntry findById(@PathVariable String id) {
+        Optional<PelletEntry> pellet =  pelletRepository.findById(id);
         if(pellet.isEmpty()) {
             throw new PelletNotFoundException();
         }
@@ -62,33 +62,33 @@ public class PelletController {
      * If a pellet entry with the same date exists, its number of sacks is incremented
      * by the value from the request. Otherwise, a new pellet entry is created.
      *
-     * @param pellet the pellet entry to create or update
+     * @param pelletEntry the pellet entry to create or update
      * @return the created or updated pellet entry
      */
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
-    Pellet createOrUpdate(@Valid @RequestBody Pellet pellet) {
-        Optional<Pellet> existing = pelletRepository.findByDate(pellet.getDate());
+    PelletEntry createOrUpdate(@Valid @RequestBody PelletEntry pelletEntry) {
+        Optional<PelletEntry> existing = pelletRepository.findByDate(pelletEntry.getDate());
         if (existing.isPresent()) {
-            Pellet toUpdate = existing.get();
-            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pellet.getNumberOfSacks());
+            PelletEntry toUpdate = existing.get();
+            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
             return pelletRepository.save(toUpdate);
         } else {
-            return pelletRepository.save(pellet);
+            return pelletRepository.save(pelletEntry);
         }
     }
 
     /**
      * Updates an existing pellet entry with the specified ID.
      *
-     * @param pellet the updated pellet data
+     * @param pelletEntry the updated pellet data
      * @param id the ID of the pellet to update
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
-    void update(@Valid @RequestBody Pellet pellet, @PathVariable String id) {
-        pellet.setId(id);
-        pelletRepository.save(pellet);
+    void update(@Valid @RequestBody PelletEntry pelletEntry, @PathVariable String id) {
+        pelletEntry.setId(id);
+        pelletRepository.save(pelletEntry);
     }
 
     /**
@@ -109,8 +109,8 @@ public class PelletController {
      */
     @GetMapping("/get-number-of-entries")
     int getNumberOfEntries() {
-        List<Pellet> pellets = pelletRepository.findAll();
-        PelletHistory history = new PelletHistory(pellets);
+        List<PelletEntry> pelletEntries = pelletRepository.findAll();
+        PelletHistory history = new PelletHistory(pelletEntries);
         return history.numberOfEntries();
     }
 
