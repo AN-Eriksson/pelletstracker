@@ -59,4 +59,11 @@ public class PelletController {
         pelletRepository.deleteById(id);
     }
 
+    @GetMapping("/get-number-of-entries")
+    int getNumberOfEntries() {
+        List<Pellet> pellets = pelletRepository.findAll();
+        PelletHistory history = new PelletHistory(pellets);
+        return history.numberOfEntries();
+    }
+
 }
