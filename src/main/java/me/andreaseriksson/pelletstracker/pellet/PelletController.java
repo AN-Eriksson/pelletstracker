@@ -46,8 +46,8 @@ public class PelletController {
      * @return a list of all pellets
      */
     @GetMapping("")
-    List<PelletEntry> findAll() {
-        return this.pelletRepository.findAll();
+    ApiResponse<List<PelletEntry>> findAll() {
+        return new ApiResponse<>("success", "All pellet entries", this.pelletRepository.findAll());
     }
 
     /**
@@ -58,13 +58,13 @@ public class PelletController {
      * @throws PelletNotFoundException if no pellet with the given ID is found
      */
     @GetMapping("/{id}")
-    PelletEntry findById(@PathVariable String id) {
+    ApiResponse<PelletEntry> findById(@PathVariable String id) {
         Optional<PelletEntry> pellet = pelletRepository.findById(id);
         if (pellet.isEmpty()) {
             throw new PelletNotFoundException();
         }
 
-        return pellet.get();
+        return new ApiResponse<>("success", "Pellet entry found", pellet.get());
     }
 
     /**
@@ -78,15 +78,17 @@ public class PelletController {
      */
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
-    PelletEntry createOrUpdate(@Valid @RequestBody PelletEntry pelletEntry) {
+    ApiResponse<PelletEntry> createOrUpdate(@Valid @RequestBody PelletEntry pelletEntry) {
         Optional<PelletEntry> existing = pelletRepository.findByDate(pelletEntry.getDate());
         if (existing.isPresent()) {
             PelletEntry toUpdate = existing.get();
             toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
-            return pelletRepository.save(toUpdate);
+
+            return new ApiResponse<>("success", "Pellet entry updated", pelletRepository.save(toUpdate));
         } else {
-            return pelletRepository.save(pelletEntry);
+            return new ApiResponse<>("success", "Pellet entry created", pelletRepository.save(pelletEntry));
         }
+
     }
 
     /**
@@ -120,10 +122,11 @@ public class PelletController {
      */
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/get-number-of-entries")
-    int getNumberOfEntries() {
+    ApiResponse<Integer> getNumberOfEntries() {
         List<PelletEntry> pelletEntries = pelletRepository.findAll();
         PelletHistory history = new PelletHistory(pelletEntries);
-        return history.numberOfEntries();
+
+        return new ApiResponse<>("success", "Total number of pellet entries", history.numberOfEntries());
     }
 
     /**
