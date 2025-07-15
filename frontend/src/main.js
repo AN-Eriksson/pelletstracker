@@ -1,4 +1,5 @@
 import './style.css'
+import { createChart } from './lineChart.js'
 
 // Wait for DOM to be loaded before attaching event listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Load entries when page loads
   loadAllEntries()
+
+  // Create the chart
+  createChart()
 })
 
 const handleFormSubmit = async (event) => {
