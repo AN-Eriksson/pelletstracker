@@ -54,7 +54,7 @@ public class PelletController {
      * Retrieves a pellet entry by its ID.
      *
      * @param id the ID of the pellet to retrieve
-     * @return the pellet with the specified ID
+     * @return an ApiResponse containing the pellet with the specified ID
      * @throws PelletNotFoundException if no pellet with the given ID is found
      */
     @GetMapping("/{id}")
@@ -74,7 +74,7 @@ public class PelletController {
      * by the value from the request. Otherwise, a new pellet entry is created.
      *
      * @param pelletEntry the pellet entry to create or update
-     * @return the created or updated pellet entry
+     * @return an ApiResponse containing the created or updated pellet entry
      */
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
@@ -118,10 +118,10 @@ public class PelletController {
     /**
      * Returns the number of pellet entries.
      *
-     * @return the total number of entries in the pellet history
+     * @return an ApiResponse containing the total number of entries in the pellet history
      */
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/get-number-of-entries")
+    @GetMapping("/count")
     ApiResponse<Integer> getNumberOfEntries() {
         List<PelletEntry> pelletEntries = pelletRepository.findAll();
         PelletHistory history = new PelletHistory(pelletEntries);
@@ -137,10 +137,10 @@ public class PelletController {
      *
      * @param week the ISO week number (1-53)
      * @param year the year for which to calculate the total
-     * @return the total number of sacks for the specified week and year
+     * @return an ApiResponse containing the total number of sacks for the specified week and year
      */
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/get-total-for-week/{week}/{year}")
+    @GetMapping("/weeks/{year}/{week}/total")
     ApiResponse<Integer> getTotalForWeekOfYear(@PathVariable int week, @PathVariable int year) {
         LocalDate startOfWeek = LocalDate.ofYearDay(year, 1)
                 .with(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR, week)
