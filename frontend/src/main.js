@@ -2,7 +2,7 @@ import './style.css'
 import { createChart } from './lineChart.js'
 
 // Wait for DOM to be loaded before attaching event listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   document.querySelector('#pelletEntry-form').addEventListener('submit', handleFormSubmit)
   document.querySelector('#refresh-btn').addEventListener('click', loadAllEntries)
 
@@ -10,10 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setFormDateToToday()
   
   // Load entries when page loads
-  loadAllEntries()
-
-  // Create the chart
-  createChart()
+  await updateTableAndChart()
 })
 
 const handleFormSubmit = async (event) => {
@@ -25,12 +22,13 @@ const handleFormSubmit = async (event) => {
   
   const success = await sendFetch(date, numberOfSacks)
   
-  // If successful, reload the table
+  // If successful, reload the table and chart
   if (success) {
-    loadAllEntries()
+    updateTableAndChart()
   }
 }
 
+// Post pellet entry to the API
 const sendFetch = async (date, numberOfSacks) => {
   try {
     const response = await fetch('http://localhost:3000/api/pellets', {
@@ -46,7 +44,6 @@ const sendFetch = async (date, numberOfSacks) => {
 
     if (response.ok) {
       const data = await response.json()
-      console.log('Response:', data)
       
       // Clear the form after successful submission
       document.querySelector('#pelletEntry-form').reset()
@@ -74,7 +71,9 @@ const loadAllEntries = async () => {
 
     if (response.ok) {
       const entries = await response.json()
-      displayEntries(entries)
+
+      return entries.data
+
     } else {
       console.error('Error loading entries:', response.statusText)
     }
@@ -83,26 +82,26 @@ const loadAllEntries = async () => {
   }
 }
 
-const displayEntries = (entries) => {
+const displayEntries = (data) => {
   const tbody = document.querySelector('#pelletEntries-tbody')
   
   // Clear existing rows
   tbody.innerHTML = ''
   
-  if (entries.length === 0) {
+  if (data.length === 0) {
     tbody.innerHTML = '<tr><td colspan="2" class="border border-gray-300 px-4 py-2 text-center text-gray-500">No entries found</td></tr>'
     return
   }
 
   // Sort the entries by date in descending order
-  entries.sort((a, b) => new Date(b.date) - new Date(a.date))
+  data.sort((a, b) => new Date(b.date) - new Date(a.date))
   
   // Add rows for each entry
-  entries.forEach(entry => {
+  data.forEach(entry => {
     const row = document.createElement('tr')
     row.className = 'hover:bg-gray-50'
 
-    const dateWithTimeStripped = new Date(entry.date).toISOString().split('T')[0]
+    const dateWithTimeStripped = stripTimeFromDate(entry.date)
     
     row.innerHTML = `
       <td class="border border-gray-300 px-4 py-2">${dateWithTimeStripped}</td>
@@ -113,7 +112,17 @@ const displayEntries = (entries) => {
   })
 }
 
+async function updateTableAndChart() {
+  const entriesData = await loadAllEntries()
+  displayEntries(entriesData)
+  createChart(entriesData)
+}
+
 function setFormDateToToday() {
   const today = new Date().toISOString().split('T')[0]
   document.querySelector('#pelletEntry-date').value = today
+}
+
+export function stripTimeFromDate(dateString) {
+  return dateString.split('T')[0]
 }
