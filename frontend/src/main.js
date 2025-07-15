@@ -46,7 +46,7 @@ const handleFormSubmit = async (event) => {
  */
 const sendFetch = async (date, numberOfSacks) => {
   try {
-    const response = await fetch('http://localhost:3000/api/pellets', {
+    const response = await fetch('/api/pellets', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -78,7 +78,7 @@ const sendFetch = async (date, numberOfSacks) => {
 /**
  * Asynchronously fetches all pellet entries from the backend API.
  *
- * Sends a GET request to 'http://localhost:3000/api/pellets' and returns the data property
+ * Sends a GET request to '/api/pellets' and returns the data property
  * from the JSON response if the request is successful.
  *
  * @async
@@ -87,7 +87,7 @@ const sendFetch = async (date, numberOfSacks) => {
  */
 const loadAllEntries = async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/pellets', {
+    const response = await fetch('/api/pellets', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
