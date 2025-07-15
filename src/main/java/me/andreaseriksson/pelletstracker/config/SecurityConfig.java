@@ -52,7 +52,6 @@ public class SecurityConfig {
     /**
      * Configures CORS (Cross-Origin Resource Sharing) settings for the application.
      * <p>
-     * - Allows requests from http://localhost:5173 (Vite frontend dev server).
      * - Permits HTTP methods: GET, POST, PUT, PATCH, OPTIONS, DELETE.
      * - Accepts all headers.
      * - Allows credentials (cookies, authorization headers, etc.).
@@ -63,7 +62,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "OPTIONS", "DELETE"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
