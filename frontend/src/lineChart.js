@@ -3,6 +3,16 @@ import { stripTimeFromDate } from './main.js';
 
 let chartInstance = null;
 
+/**
+ * Creates and renders a line chart displaying the number of sacks per day.
+ *
+ * @param {Array<Object>} [data=null] - The input data for the chart.
+ *   Each element in the array should be an object with the following properties:
+ *   - {string} date - The date in a format parseable by `new Date()`. Example: '2024-06-01'.
+ *   - {number} numberOfSacks - The number of sacks for the given date.
+ *
+ * @returns {Chart} The created Chart.js instance.
+ */
 export const createChart = (data = null) => {
     // Destroy existing chart if it exists
     if (chartInstance) {
