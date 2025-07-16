@@ -1,5 +1,8 @@
 import './style.css'
-import { createChart } from './lineChart.js'
+import { LineChartManager } from './lib/LineChartManager.js'
+
+// Initialize the chart managers
+const allEntriesLineChart = new LineChartManager('allEntriesLineChart')
 
 // Wait for DOM to be loaded before attaching event listeners
 document.addEventListener('DOMContentLoaded', async () => {
@@ -155,7 +158,7 @@ const displayEntries = (data) => {
 async function updateTableAndChart() {
   const entriesData = await loadAllEntries()
   displayEntries(entriesData)
-  createChart(entriesData)
+  allEntriesLineChart.updateChart(entriesData);
 }
 
 /**
