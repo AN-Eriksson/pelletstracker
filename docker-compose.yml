@@ -6,7 +6,7 @@ services:
     ports:
       - "${SERVER_PORT}:3000"
     environment:
-      SPRING_DATA_MONGODB_URI: "${MONGODB_URI}"
+      SPRING_DATA_MONGODB_URI: "${SPRING_DATA_MONGODB_URI}"
       CORS_ALLOWED_ORIGINS: "${CORS_ALLOWED_ORIGINS}"
       SERVER_PORT: "${SERVER_PORT}"
     depends_on:
