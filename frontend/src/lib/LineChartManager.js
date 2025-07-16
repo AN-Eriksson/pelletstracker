@@ -1,5 +1,6 @@
 import Chart from 'chart.js/auto';
 import { stripTimeFromDate } from '../main.js';
+import { fillMissingDates } from '../utilities/dateUtils.js';
 
 export class LineChartManager {
     constructor(canvasId) {
@@ -29,8 +30,9 @@ export class LineChartManager {
         let chartData;
 
         if (data && data.length > 0) {
-            // Sort data by date
-            const sortedData = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            // Fill missing dates with zeros and sort data by date
+            const filledData = fillMissingDates(data);
+            const sortedData = filledData.sort((a, b) => new Date(a.date) - new Date(b.date));
             const labels = sortedData.map(entry => stripTimeFromDate(entry.date));
 
             chartData = {
@@ -47,6 +49,10 @@ export class LineChartManager {
             data: chartData,
             options: {
                 responsive: true,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
                 scales: {
                     x: {
                         title: {
@@ -59,29 +65,55 @@ export class LineChartManager {
                             display: true,
                             text: 'Antal säckar'
                         },
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1 // Show only integer values
+                        }
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 2,           // Size of points
+                        hoverRadius: 6,      // Size when hovering
+                        backgroundColor: 'rgb(75, 192, 192)',
+                        borderColor: 'rgb(75, 192, 192)',
+                        borderWidth: 2
+                    },
+                    line: {
+                        tension: 0,          // Straight lines (0) or curved (0.4)
+                        borderWidth: 2
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.parsed.y;
+                                if (value === 0) {
+                                    return 'Inga säckar fylldes på';
+                                }
+                                return `${value} säckar fylldes på`;
+                            }
+                        }
                     }
                 }
             }
-        });
+        })}
 
-        return this.chartInstance;
-    }
+        /**
+         * Updates the chart with new data
+         */
+        updateChart(data) {
+            return this.createChart(data);
+        }
 
-    /**
-     * Updates the chart with new data
-     */
-    updateChart(data) {
-        return this.createChart(data);
-    }
-
-    /**
-     * Destroys the chart instance
-     */
-    destroy() {
-        if (this.chartInstance) {
-            this.chartInstance.destroy();
-            this.chartInstance = null;
+        /**
+         * Destroys the chart instance
+         */
+        destroy() {
+            if (this.chartInstance) {
+                this.chartInstance.destroy();
+                this.chartInstance = null;
+            }
         }
     }
-}

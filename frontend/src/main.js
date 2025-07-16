@@ -130,9 +130,10 @@ const displayEntries = (data) => {
 
   // Sort the entries by date in descending order
   data.sort((a, b) => new Date(b.date) - new Date(a.date))
+  const lastTenEntries = data.slice(0, 10)
   
   // Add rows for each entry
-  data.forEach(entry => {
+  lastTenEntries.forEach(entry => {
     const row = document.createElement('tr')
     row.className = 'hover:bg-gray-50'
 
