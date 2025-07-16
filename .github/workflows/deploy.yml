@@ -36,7 +36,7 @@ jobs:
         run: |
           ssh $PRODUCTION_HOST_USER@$PRODUCTION_HOST "
             cd $PRODUCTION_HOST_PATH && \
-            MONGODB_URI='${{ vars.SPRING_DATA_MONGODB_URI }}' \
+            SPRING_DATA_MONGODB_URI='${{ vars.SPRING_DATA_MONGODB_URI }}' \
             SERVER_PORT='${{ vars.SERVER_PORT }}' \
             CORS_ALLOWED_ORIGINS='${{ vars.CORS_ALLOWED_ORIGINS }}' \
             docker compose up --build -d
