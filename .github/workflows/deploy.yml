@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      PRODUCTION_HOST: ${{ vars.PRODUCTION_HOST }}
+      PRODUCTION_HOST_USER: ${{ vars.PRODUCTION_HOST_USER }}
+      PRODUCTION_HOST_PATH: ${{ vars.PRODUCTION_HOST_PATH }}
+      MONGODB_URI: ${{ vars.MONGODB_URI }}
+      SERVER_PORT: ${{ vars.SERVER_PORT }}
+      CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $PRODUCTION_HOST >> ~/.ssh/known_hosts
+
+      - name: Pull latest code on server
+        run: ssh -o StrictHostKeyChecking=no $PRODUCTION_HOST_USER@$PRODUCTION_HOST "cd $PRODUCTION_HOST_PATH && git pull origin main"
+
+      - name: Deploy using Docker Compose
+        run: |
+          ssh $PRODUCTION_HOST_USER@$PRODUCTION_HOST "
+            cd $PRODUCTION_HOST_PATH && \
+            MONGODB_URI='${{ vars.MONGODB_URI }}' \
+            SERVER_PORT='${{ vars.SERVER_PORT }}' \
+            CORS_ALLOWED_ORIGINS='${{ vars.CORS_ALLOWED_ORIGINS }}' \
+            docker compose up --build -d
+          "
