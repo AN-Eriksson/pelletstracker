@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PelletInputForm from './components/PelletInputForm';
 import RecentInputsTable from './components/RecentInputsTable';
 import LineChart from './components/LineChart';
+import Statistics from './components/Statistics';
 
 export default function App() {
   const [entries, setEntries] = useState([]);
@@ -49,6 +50,8 @@ export default function App() {
       <PelletInputForm onAddEntry={addEntry} />
 
       <RecentInputsTable entries={entries} />
+
+      <Statistics entries={entries} />
 
       <LineChart entries={entries} />
     </div>
