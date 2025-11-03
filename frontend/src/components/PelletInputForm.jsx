@@ -1,33 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
 export default function PelletInputForm({ onAddEntry }) {
     const todayIso = (() => {
-        const d = new Date()
+        const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-            d.getDate()
-        ).padStart(2, '0')}`
-    })()
+            d.getDate(),
+        ).padStart(2, '0')}`;
+    })();
 
-    const [date, setDate] = useState(todayIso)
-    const [numberOfSacks, setNumberOfSacks] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [date, setDate] = useState(todayIso);
+    const [numberOfSacks, setNumberOfSacks] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
-        const n = parseInt(numberOfSacks, 10)
-        if (!date || Number.isNaN(n) || n < 0) return
+    const handleSubmit = async e => {
+        e.preventDefault();
+        const n = parseInt(numberOfSacks, 10);
+        if (!date || Number.isNaN(n) || n < 0) return;
 
         try {
-            setLoading(true)
-            const result = await onAddEntry(date, n)
+            setLoading(true);
+            const result = await onAddEntry(date, n);
             if (result) {
-                setNumberOfSacks('')
+                setNumberOfSacks('');
             }
         } catch (err) {
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 mb-8">
@@ -37,7 +37,7 @@ export default function PelletInputForm({ onAddEntry }) {
                     <input
                         type="date"
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={e => setDate(e.target.value)}
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
@@ -48,7 +48,7 @@ export default function PelletInputForm({ onAddEntry }) {
                     <input
                         type="number"
                         value={numberOfSacks}
-                        onChange={(e) => setNumberOfSacks(e.target.value)}
+                        onChange={e => setNumberOfSacks(e.target.value)}
                         min="0"
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -66,5 +66,5 @@ export default function PelletInputForm({ onAddEntry }) {
                 </div>
             </div>
         </form>
-    )
+    );
 }
