@@ -10,7 +10,8 @@ PelletTracker is a small application to record and visualize household pellet co
 
 ## Coming functionality / To be implemented
 - Frontend:
-    - Convert prototype to React and improve chart UI.
+    - Frontend converted to React; improve chart UI.
+    - Convert JavaScript code to TypeScript.
     - User account pages and preferences.
 - Backend:
     - Authentication and authorization (JWT-based access tokens, role-based access).
@@ -18,13 +19,14 @@ PelletTracker is a small application to record and visualize household pellet co
     - Pagination and filtering for large data sets.
     - Import/Export improvements (bulk import, CSV mapping).
     - Rate limiting and basic abuse protection.
+    - Migrate to PostgresSQL-database.
 - Tests:
     - Add comprehensive unit and integration tests for backend and frontend.
     - End-to-end tests for critical flows.
 
 ## Tech stack
 - Backend: Java, Spring Boot
-- Frontend: Prototype in vanilla JavaScript, will be converted to React.
+- Frontend: React
 - Build: Gradle
 - Database: MongoDB
 - Containerization: Docker
