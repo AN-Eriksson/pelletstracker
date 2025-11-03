@@ -29,7 +29,7 @@ export default function RecentInputsTable({ entries = [] }) {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {entries.map((entry, idx) => {
-            const key = entry._id ?? `${entry.date}-${entry.numberOfSacks}-${idx}`;
+            const key = entry.id;
             return (
               <tr key={key}>
                 <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">

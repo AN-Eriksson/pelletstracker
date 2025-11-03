@@ -1,22 +1,20 @@
-import { defineConfig } from 'vite'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   build: {
-    sourcemap: false
+    sourcemap: false,
   },
   esbuild: {
-    keepNames: true
+    keepNames: true,
   },
-  plugins: [
-    tailwindcss(),
-  ],
+  plugins: [tailwindcss()],
   server: {
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: false
-      }
-    }
+        secure: false,
+      },
+    },
   },
-})
+});
