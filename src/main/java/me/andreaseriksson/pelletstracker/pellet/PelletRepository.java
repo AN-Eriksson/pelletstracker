@@ -4,7 +4,7 @@ import org.springframework.cglib.core.Local;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +21,7 @@ public interface PelletRepository extends MongoRepository<PelletEntry, String> {
      * @param date the date of the pellet entry
      * @return an Optional containing the found Pellet, or empty if not found
      */
-    Optional<PelletEntry> findByDate(LocalDateTime date);
+    Optional<PelletEntry> findByDate(LocalDate date);
 
     /**
      * Finds all Pellet entries with a date between the specified start and end dates (inclusive).
@@ -30,5 +30,5 @@ public interface PelletRepository extends MongoRepository<PelletEntry, String> {
      * @param endDate the end date (inclusive)
      * @return a list of PelletEntry objects within the date range
      */
-    List<PelletEntry> findByDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<PelletEntry> findByDateBetween(LocalDate startDate, LocalDate endDate);
 }

@@ -5,8 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.temporal.IsoFields;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -141,17 +140,16 @@ public class PelletController {
      */
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/weeks/{year}/{week}/total")
-    ApiResponse<Integer> getTotalForWeekOfYear(@PathVariable int week, @PathVariable int year) {
+    ApiResponse<Integer> getTotalForWeekOfYear(@PathVariable("week") int week, @PathVariable("year") int year) {
         LocalDate startOfWeek = LocalDate.ofYearDay(year, 1)
-                .with(java.time.temporal.IsoFields.WEEK_OF_WEEK_BASED_YEAR, week)
+                .with(IsoFields.WEEK_OF_WEEK_BASED_YEAR, week)
                 .with(java.time.DayOfWeek.MONDAY);
-        LocalDateTime startDateTime = startOfWeek.atStartOfDay();
-        LocalDateTime endDateTime = startOfWeek.plusDays(6).atTime(LocalTime.MAX);
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
 
-        logger.info("LOGGER: Querying pellet entries from {} to {}", startDateTime, endDateTime);
+        logger.info("LOGGER: Querying pellet entries from {} to {}", startOfWeek, endOfWeek);
 
         int totalNumberOfSacks = 0;
-        for(PelletEntry entry : pelletRepository.findByDateBetween(startDateTime, endDateTime)) {
+        for(PelletEntry entry : pelletRepository.findByDateBetween(startOfWeek, endOfWeek)) {
             totalNumberOfSacks += entry.getNumberOfSacks();
         }
 

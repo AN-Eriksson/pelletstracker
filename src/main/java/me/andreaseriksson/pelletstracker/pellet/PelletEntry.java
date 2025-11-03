@@ -1,12 +1,12 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Min;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Represents a pellet entry with a unique date and the number of sacks.
@@ -23,7 +23,8 @@ public class PelletEntry {
      * The date of the pellet entry. Must be unique.
      */
     @Indexed(unique = true)
-    private LocalDateTime date;
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate date;
 
     /**
      * The number of sacks for the pellet entry. Must be at least 1.
@@ -61,7 +62,7 @@ public class PelletEntry {
      *
      * @return the date
      */
-    public LocalDateTime getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
@@ -71,7 +72,7 @@ public class PelletEntry {
      * @param date the date to set
      */
     public void setDate(LocalDate date) {
-        this.date = date != null ? date.atStartOfDay() : null;
+        this.date = date != null ? date : null;
     }
 
     /**
