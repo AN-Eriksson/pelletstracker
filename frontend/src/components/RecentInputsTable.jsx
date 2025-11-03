@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 export default function RecentInputsTable({ entries = [] }) {
   const formatDate = dateVal => {
@@ -6,6 +6,10 @@ export default function RecentInputsTable({ entries = [] }) {
     const d = new Date(dateVal);
     return d.toISOString().split('T')[0];
   };
+
+  const fiveLatestEntries = useMemo(() => {
+    return [...entries].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  }, [entries]);
 
   if (!entries || entries.length === 0) {
     return <div className="text-sm text-gray-500">Inga poster ännu</div>;
@@ -28,7 +32,7 @@ export default function RecentInputsTable({ entries = [] }) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {entries.map((entry, idx) => {
+          {fiveLatestEntries.map((entry, idx) => {
             const key = entry.id;
             return (
               <tr key={key}>

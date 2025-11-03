@@ -29,18 +29,22 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date, numberOfSacks }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       await loadAllEntries();
-      return true;
     } catch (err) {
       console.error(err);
-      return false;
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-6">Pellets Tracker</h1>
+    <div className="max-w-4xl mx-auto mt-2 p-4 bg-white rounded-lg shadow-md">
+      <h1 className="text-2xl font-bold mb-6">
+        PelletTracker - logga och följ din pelletsförbrukning!
+      </h1>
 
       <PelletInputForm onAddEntry={addEntry} />
 
