@@ -1,5 +1,5 @@
 import Chart from 'chart.js/auto';
-import { stripTimeFromDate } from '../main.js';
+import { stripTimeFromDate } from '../utilities/dateUtils.js';
 import { fillMissingDates } from '../utilities/dateUtils.js';
 
 export class LineChartManager {
