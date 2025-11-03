@@ -1,6 +1,7 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
 import jakarta.validation.Valid;
+import me.andreaseriksson.pelletstracker.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,13 +55,13 @@ public class PelletController {
      *
      * @param id the ID of the pellet to retrieve
      * @return an ApiResponse containing the pellet with the specified ID
-     * @throws PelletNotFoundException if no pellet with the given ID is found
+     * @throws ResourceNotFoundException if no pellet with the given ID is found
      */
     @GetMapping("/{id}")
     ApiResponse<PelletEntry> findById(@PathVariable String id) {
         Optional<PelletEntry> pellet = pelletRepository.findById(id);
         if (pellet.isEmpty()) {
-            throw new PelletNotFoundException();
+            throw new ResourceNotFoundException("Pellet not found with id " + id);
         }
 
         return new ApiResponse<>("success", "Pellet entry found", pellet.get());
@@ -95,10 +96,15 @@ public class PelletController {
      *
      * @param pelletEntry the updated pellet data
      * @param id          the ID of the pellet to update
+     * @throws ResourceNotFoundException if no pellet with the given ID is found
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
     void update(@Valid @RequestBody PelletEntry pelletEntry, @PathVariable String id) {
+        if (!pelletRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Pellet not found with id " + id);
+        }
+
         pelletEntry.setId(id);
         pelletRepository.save(pelletEntry);
     }

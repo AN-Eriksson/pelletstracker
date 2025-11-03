@@ -2,11 +2,13 @@ package me.andreaseriksson.pelletstracker.pellet;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * Represents a pellet entry with a unique date and the number of sacks.
@@ -24,6 +26,7 @@ public class PelletEntry {
      */
     @Indexed(unique = true)
     @JsonFormat(pattern = "yyyy-MM-dd")
+    @NotNull(message = "date must not be null")
     private LocalDate date;
 
     /**
@@ -72,7 +75,7 @@ public class PelletEntry {
      * @param date the date to set
      */
     public void setDate(LocalDate date) {
-        this.date = date != null ? date : null;
+        this.date = Objects.requireNonNull(date, "date must not be null");
     }
 
     /**
