@@ -11,7 +11,7 @@ export default function LineChart({ entries = [] }) {
     return () => {
       managerRef.current.destroy();
     };
-  }, []);
+  }, [entries]);
 
   useEffect(() => {
     managerRef.current.updateChart(entries);
