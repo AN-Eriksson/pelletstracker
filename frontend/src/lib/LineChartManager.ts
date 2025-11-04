@@ -1,9 +1,11 @@
 import Chart from 'chart.js/auto';
-import { stripTimeFromDate } from '../utilities/dateUtils.js';
-import { fillMissingDates } from '../utilities/dateUtils.js';
+import { stripTimeFromDate, fillMissingDates, Entry } from '../utilities/dateUtils.ts';
 
 export class LineChartManager {
-  constructor(canvasId) {
+  private canvasId: string;
+  private chartInstance: Chart | null;
+
+  constructor(canvasId: string) {
     this.canvasId = canvasId;
     this.chartInstance = null;
   }
@@ -18,21 +20,34 @@ export class LineChartManager {
    *
    * @returns {Chart} The created Chart.js instance.
    */
-  createChart(data = null) {
+  createChart(data: Entry[] | null = null): Chart | void {
     // Destroy existing chart if it exists
     if (this.chartInstance) {
       this.chartInstance.destroy();
     }
 
-    const ctx = document.getElementById(this.canvasId).getContext('2d');
+    const element = document.getElementById(this.canvasId);
+    if (!element) {
+      throw new Error(`Element with id "${this.canvasId}" not found`);
+    }
+    if (!(element instanceof HTMLCanvasElement)) {
+      throw new Error(`Element with id "${this.canvasId}" is not a <canvas>`);
+    }
+
+    const ctx = element.getContext('2d');
+    if (!ctx) {
+      throw new Error('Unable to obtain 2D rendering context from canvas');
+    }
 
     // Prepare data for the chart
-    let chartData;
+    let chartData: any = { labels: [], datasets: []}
 
     if (data && data.length > 0) {
       // Fill missing dates with zeros and sort data by date
       const filledData = fillMissingDates(data);
-      const sortedData = filledData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      const sortedData = filledData.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
       const labels = sortedData.map(entry => stripTimeFromDate(entry.date));
 
       chartData = {
@@ -89,7 +104,7 @@ export class LineChartManager {
         plugins: {
           tooltip: {
             callbacks: {
-              label: function (context) {
+              label: function (context: any) {
                 const value = context.parsed.y;
                 if (value === 0) {
                   return 'Inga säckar fylldes på';
@@ -106,7 +121,7 @@ export class LineChartManager {
   /**
    * Updates the chart with new data
    */
-  updateChart(data) {
+  updateChart(data: Entry[] | null) {
     return this.createChart(data);
   }
 
