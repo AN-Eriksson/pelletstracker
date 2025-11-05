@@ -1,6 +1,5 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
-import org.springframework.cglib.core.Local;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 

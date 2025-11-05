@@ -9,9 +9,11 @@ import java.time.LocalDate;
 import java.time.temporal.IsoFields;
 import java.util.List;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import me.andreaseriksson.pelletstracker.common.ApiResponse;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * REST controller for managing pellet entries.
@@ -79,16 +81,28 @@ public class PelletController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
     ApiResponse<PelletEntry> createOrUpdate(@Valid @RequestBody PelletEntry pelletEntry) {
-        Optional<PelletEntry> existing = pelletRepository.findByDate(pelletEntry.getDate());
-        if (existing.isPresent()) {
-            PelletEntry toUpdate = existing.get();
-            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
+        try {
+            Optional<PelletEntry> existing = pelletRepository.findByDate(pelletEntry.getDate());
 
-            return new ApiResponse<>("success", "Pellet entry updated", pelletRepository.save(toUpdate));
-        } else {
-            return new ApiResponse<>("success", "Pellet entry created", pelletRepository.save(pelletEntry));
+            PelletEntry savedEntry;
+            if (existing.isPresent()) {
+                PelletEntry toUpdate = existing.get();
+                toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
+                savedEntry = pelletRepository.save(toUpdate);
+
+                logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
+                return new ApiResponse<>("success", "Pellet entry updated", savedEntry);
+            } else {
+                savedEntry = pelletRepository.save(pelletEntry);
+
+                logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
+                return new ApiResponse<>("success", "Pellet entry created", savedEntry);
+            }
+        } catch (Exception e) {
+            logger.error("LOGGER: Failed to create/update pellet entry", e);
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create/update pellet entry", e);
         }
-
     }
 
     /**
@@ -155,7 +169,7 @@ public class PelletController {
         logger.info("LOGGER: Querying pellet entries from {} to {}", startOfWeek, endOfWeek);
 
         int totalNumberOfSacks = 0;
-        for(PelletEntry entry : pelletRepository.findByDateBetween(startOfWeek, endOfWeek)) {
+        for (PelletEntry entry : pelletRepository.findByDateBetween(startOfWeek, endOfWeek)) {
             totalNumberOfSacks += entry.getNumberOfSacks();
         }
 

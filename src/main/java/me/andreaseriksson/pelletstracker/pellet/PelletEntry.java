@@ -104,4 +104,9 @@ public class PelletEntry {
     public void setId(String id) {
         this.id = id;
     }
+
+    @Override
+    public String toString() {
+        return String.format("PelletEntry{id=%s, date=%s, numberOfSacks=%s}", id, date, numberOfSacks);
+    }
 }
