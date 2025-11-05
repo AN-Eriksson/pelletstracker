@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 
-export default function RecentInputsTable({ entries = [] }) {
+export default function RecentInputsTable({ entries = [], onEdit }) {
   const formatDate = dateVal => {
     if (!dateVal) return '';
     const d = new Date(dateVal);
@@ -31,18 +31,21 @@ export default function RecentInputsTable({ entries = [] }) {
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody>
           {fiveLatestEntries.map((entry, idx) => {
             const key = entry.id;
             return (
               <tr key={key}>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
-                  {formatDate(entry.date)}
+                <td>{formatDate(entry.date)}</td>
+                <td>{entry.numberOfSacks}</td>
+                <td className="text-right">
+                  <button
+                    onClick={() => onEdit(entry)}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Redigera
+                  </button>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
-                  {entry.numberOfSacks}
-                </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-right"></td>
               </tr>
             );
           })}
