@@ -14,8 +14,7 @@
     "noEmit": true,
     "types": ["vite/client"],
     "allowJs": true,
-    "checkJs": false,
-    "allowImportingTsExtensions": true
+    "checkJs": false
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

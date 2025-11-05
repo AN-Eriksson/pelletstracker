@@ -1,5 +1,5 @@
 import Chart from 'chart.js/auto';
-import { stripTimeFromDate, fillMissingDates, Entry } from '../utilities/dateUtils.ts';
+import { stripTimeFromDate, fillMissingDates, Entry } from '../utilities/dateUtils';
 
 export class LineChartManager {
   private canvasId: string;
