@@ -81,27 +81,21 @@ public class PelletController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
     ApiResponse<PelletEntry> createOrUpdate(@Valid @RequestBody PelletEntry pelletEntry) {
-        try {
-            Optional<PelletEntry> existing = pelletRepository.findByDate(pelletEntry.getDate());
+        Optional<PelletEntry> existing = pelletRepository.findByDate(pelletEntry.getDate());
 
-            PelletEntry savedEntry;
-            if (existing.isPresent()) {
-                PelletEntry toUpdate = existing.get();
-                toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
-                savedEntry = pelletRepository.save(toUpdate);
+        PelletEntry savedEntry;
+        if (existing.isPresent()) {
+            PelletEntry toUpdate = existing.get();
+            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
+            savedEntry = pelletRepository.save(toUpdate);
 
-                logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
-                return new ApiResponse<>("success", "Pellet entry updated", savedEntry);
-            } else {
-                savedEntry = pelletRepository.save(pelletEntry);
+            logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
+            return new ApiResponse<>("success", "Pellet entry updated", savedEntry);
+        } else {
+            savedEntry = pelletRepository.save(pelletEntry);
 
-                logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
-                return new ApiResponse<>("success", "Pellet entry created", savedEntry);
-            }
-        } catch (Exception e) {
-            logger.error("LOGGER: Failed to create/update pellet entry", e);
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create/update pellet entry", e);
+            logger.info("LOGGER: Created and saved pellet entry: {}", savedEntry);
+            return new ApiResponse<>("success", "Pellet entry created", savedEntry);
         }
     }
 
