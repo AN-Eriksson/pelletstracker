@@ -4,6 +4,7 @@ import RecentInputsTable from './components/RecentInputsTable';
 import LineChart from './components/LineChart';
 import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
+import SiteHeader from './components/SiteHeader';
 
 export default function App() {
   const [entries, setEntries] = useState([]);
@@ -82,10 +83,8 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-2 p-4 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-6">
-        PelletTracker - logga och följ din pelletsförbrukning!
-      </h1>
+    <div className="max-w-4xl mx-auto p-4 bg-white rounded-lg shadow-md">
+      <SiteHeader />
 
       <PelletInputForm onAddEntry={addEntry} />
 
