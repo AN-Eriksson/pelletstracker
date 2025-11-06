@@ -9,15 +9,12 @@ import { Entry } from './types/Entry';
 
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [editOpen, setEditOpen] = useState<boolean>(false);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
 
   const openEdit = (entry: Entry) => {
     setEntryToEdit(entry);
-    setEditOpen(true);
   };
   const closeEdit = () => {
-    setEditOpen(false);
     setEntryToEdit(null);
   };
 
