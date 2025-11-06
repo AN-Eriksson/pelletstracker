@@ -1,25 +1,30 @@
 import React, { useMemo } from 'react';
+import { Entry } from '../types/Entry';
 
-const toDateStart = d => {
+const toDateStart = (d: string | Date) => {
   const date = typeof d === 'string' ? new Date(d) : new Date(d);
   date.setHours(0, 0, 0, 0);
+  
   return date;
 };
 
-const sumSince = (entries, days) => {
+const sumSince = (entries: Entry[], days: number) => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days + 1); // include today
   cutoff.setHours(0, 0, 0, 0);
+
   return entries.reduce((acc, e) => {
     const ed = toDateStart(e.date);
     return ed >= cutoff ? acc + Number(e.numberOfSacks || 0) : acc;
   }, 0);
 };
 
-const sumSinceDate = (entries, fromDate) => {
+const sumSinceDate = (entries: Entry[], fromDate: string | Date) => {
   const cutoff = toDateStart(fromDate);
+
   return entries.reduce((acc, e) => {
     const ed = toDateStart(e.date);
+
     return ed >= cutoff ? acc + Number(e.numberOfSacks || 0) : acc;
   }, 0);
 };
@@ -31,10 +36,15 @@ const startOfWeek = () => {
   const monday = new Date(d);
   monday.setDate(d.getDate() - diff);
   monday.setHours(0, 0, 0, 0);
+  
   return monday;
 };
 
-export default function Statistics({ entries = [] }) {
+interface Props {
+  entries?: Entry[];
+}
+
+export default function Statistics({ entries = [] }: Props) {
   const stats = useMemo(() => {
     const total30 = sumSince(entries, 30);
     const total14 = sumSince(entries, 14);

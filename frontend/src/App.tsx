@@ -5,13 +5,14 @@ import LineChart from './components/LineChart';
 import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
+import { Entry } from './types/Entry';
 
 export default function App() {
-  const [entries, setEntries] = useState([]);
-  const [editOpen, setEditOpen] = useState(false);
-  const [entryToEdit, setEntryToEdit] = useState(null);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [editOpen, setEditOpen] = useState<boolean>(false);
+  const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
 
-  const openEdit = entry => {
+  const openEdit = (entry: Entry) => {
     setEntryToEdit(entry);
     setEditOpen(true);
   };
@@ -20,13 +21,13 @@ export default function App() {
     setEntryToEdit(null);
   };
 
-  const handleSave = async updated => {
+  const handleSave = async (entry: Entry) => {
     try {
-      const id = updated.id;
+      const id = entry.id;
       await fetch(`/api/pellets/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
+        body: JSON.stringify(entry),
       });
       await loadAllEntries();
     } catch (err) {
@@ -36,7 +37,7 @@ export default function App() {
     }
   };
 
-  const handleDelete = async entry => {
+  const handleDelete = async (entry: Entry) => {
     try {
       const id = entry.id;
       await fetch(`/api/pellets/${id}`, { method: 'DELETE' });
@@ -64,7 +65,7 @@ export default function App() {
     loadAllEntries();
   }, [loadAllEntries]);
 
-  const addEntry = async (date, numberOfSacks) => {
+  const addEntry = async (date: string, numberOfSacks: number) => {
     try {
       const res = await fetch('/api/pellets', {
         method: 'POST',
@@ -90,13 +91,15 @@ export default function App() {
 
       <RecentInputsTable entries={entries} onEdit={openEdit} />
 
-      <EditEntryModal
-        isOpen={editOpen}
-        entry={entryToEdit}
-        onClose={closeEdit}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
+      {entryToEdit && (
+        <EditEntryModal
+          isOpen={editOpen}
+          entry={entryToEdit}
+          onClose={closeEdit}
+          onSave={handleSave}
+          onDelete={handleDelete}
+        />
+      )}
 
       <Statistics entries={entries} />
 

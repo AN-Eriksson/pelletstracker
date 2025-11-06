@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-type Entry = {
-  id: string | number;
-  date: string;
-  numberOfSacks: number;
-};
+import { Entry } from '../types/Entry';
 
 interface Props {
   isOpen: boolean,
