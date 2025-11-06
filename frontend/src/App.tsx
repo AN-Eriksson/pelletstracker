@@ -93,7 +93,6 @@ export default function App() {
 
       {entryToEdit && (
         <EditEntryModal
-          isOpen={editOpen}
           entry={entryToEdit}
           onClose={closeEdit}
           onSave={handleSave}
