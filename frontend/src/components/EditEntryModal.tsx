@@ -1,10 +1,24 @@
 import React, { useState, useEffect } from 'react';
 
-const EditEntryModal = ({ isOpen, entry, onClose, onSave, onDelete }) => {
+type Entry = {
+  id: string | number;
+  date: string;
+  numberOfSacks: number;
+};
+
+interface Props {
+  isOpen: boolean,
+  entry: Entry,
+  onClose: () => void,
+  onSave: (entry: Entry) => Promise<void>,
+  onDelete: (entry: Entry) => Promise<void>
+}
+
+const EditEntryModal = ({ isOpen, entry, onClose, onSave, onDelete }: Props) => {
   const [date, setDate] = useState('');
   const [numberOfSacks, setNumberOfSacks] = useState('');
 
-  const toInputDate = date => {
+  const toInputDate = (date?: string | Date): string => {
     if (!date) {
       return '';
     }
@@ -34,8 +48,9 @@ const EditEntryModal = ({ isOpen, entry, onClose, onSave, onDelete }) => {
     return null;
   }
 
-  const handleSave = e => {
-    e.preventDefault();
+  const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     onSave({
       ...entry,
       date,

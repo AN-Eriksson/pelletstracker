@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-export default function PelletInputForm({ onAddEntry }) {
+interface Props {
+  onAddEntry: (date: string, numberOfSacks: number) => Promise<void>;
+}
+
+export default function PelletInputForm({ onAddEntry }: Props) {
   const todayIso = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
@@ -12,18 +16,20 @@ export default function PelletInputForm({ onAddEntry }) {
   const [numberOfSacks, setNumberOfSacks] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    const n = parseInt(numberOfSacks, 10);
-    if (!date || Number.isNaN(n) || n < 0) return;
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const numberOfSacksParsed = parseInt(numberOfSacks, 10);
+    if (!date || Number.isNaN(numberOfSacksParsed) || numberOfSacksParsed < 0) {
+      return;
+    }
 
     try {
       setLoading(true);
-      const result = await onAddEntry(date, n);
-      if (result) {
-        setNumberOfSacks('');
-      }
+      await onAddEntry(date, numberOfSacksParsed);
+      
     } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }

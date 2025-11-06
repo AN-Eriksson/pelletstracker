@@ -1,14 +1,26 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
+import { stripTimeFromDate } from '../utilities/dateUtils';
+import { Entry } from '../types/Entry';
 
-export default function RecentInputsTable({ entries = [], onEdit }) {
-  const formatDate = dateVal => {
-    if (!dateVal) return '';
+interface Props {
+  entries?: Entry[];
+  onEdit: (entry: Entry) => void;
+}
+
+export default function RecentInputsTable({ entries = [], onEdit }: Props) {
+  const formatDate = (dateVal?: string | Date): string => {
+    if (!dateVal) {
+      return '';
+    }
+
     const d = new Date(dateVal);
-    return d.toISOString().split('T')[0];
+    return stripTimeFromDate(d);
   };
 
   const fiveLatestEntries = useMemo(() => {
-    return [...entries].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    return [...entries]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
   }, [entries]);
 
   if (!entries || entries.length === 0) {

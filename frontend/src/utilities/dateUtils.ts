@@ -1,3 +1,5 @@
+import { Entry } from "../types/Entry";
+
 /**
  * Return YYYY-MM-DD (strip time part) from a date string or Date
  */
@@ -9,18 +11,6 @@ export const stripTimeFromDate = (dateInput: string | Date): string => {
   const dd = String(date.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 };
-
-
-/**
- * Entry representing a recorded date and the number of sacks for that date.
- *
- * @property date - The entry date, either an ISO date string or a Date object.
- * @property numberOfSacks - The number of sacks recorded for the given date.
- */
-export interface Entry {
-  date: string | Date;
-  numberOfSacks: number;
-}
 
 /**
  * Fills missing dates between the first and last entry with zero values
