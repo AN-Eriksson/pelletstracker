@@ -30,4 +30,13 @@ export class AuthManager {
   clearToken() {
     localStorage.removeItem(this.#TOKEN_KEY);
   }
+
+  isAuthenticated() {
+    this.getToken() !== null;
+  }
+
+  getAuthHeader() {
+    const token = this.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
 }
