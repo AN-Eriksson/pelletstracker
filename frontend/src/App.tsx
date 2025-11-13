@@ -6,6 +6,7 @@ import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
 import { Entry } from './types/Entry';
+import { AuthManager } from './lib/AuthManager';
 
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -17,6 +18,11 @@ export default function App() {
   const closeEdit = () => {
     setEntryToEdit(null);
   };
+
+  useEffect(() => {
+    const authManager = new AuthManager
+    authManager.loginRequest('andreas', '1234')
+  })
 
   const handleSave = async (entry: Entry) => {
     try {
