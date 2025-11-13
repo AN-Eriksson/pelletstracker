@@ -10,8 +10,24 @@ export class AuthManager {
       body: JSON.stringify(credentials),
     });
 
+    if (!response.ok) {
+      throw new Error(`Login failed: ${response.status}`);
+    }
+
     const json = await response.json();
 
-    console.log(json);
+    this.#saveToken(json.token);
+  }
+
+  #saveToken(token) {
+    localStorage.setItem(this.#TOKEN_KEY, token);
+  }
+
+  getToken() {
+    return localStorage.getItem(this.#TOKEN_KEY);
+  }
+
+  clearToken() {
+    localStorage.removeItem(this.#TOKEN_KEY);
   }
 }
