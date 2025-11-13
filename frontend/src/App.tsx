@@ -24,8 +24,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    authManager.loginRequest('andreas', '1234');
-  });
+    if (!authManager.isAuthenticated()) {
+      (async () => {
+        try {
+          authManager.loginRequest('andreas', '1234');
+        } catch (err) {
+          console.error('Login failed', err);
+        }
+      })
+    }
+    
+  }, []);
 
   const handleSave = async (entry: Entry) => {
     try {

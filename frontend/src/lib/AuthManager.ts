@@ -32,7 +32,7 @@ export class AuthManager {
   }
 
   isAuthenticated() {
-    this.getToken() !== null;
+    return this.getToken() !== null;
   }
 
   getAuthHeader() {
