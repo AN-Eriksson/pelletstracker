@@ -1,7 +1,7 @@
 export class AuthManager {
-  #TOKEN_KEY = 'pelletstracker_jwt';
+  private readonly TOKEN_KEY: string = 'pelletstracker_jwt';
 
-  async loginRequest(username, password) {
+  async loginRequest(username: string, password: string): Promise<void> {
     const credentials = { username, password };
 
     const response = await fetch('/auth/login', {
@@ -19,16 +19,16 @@ export class AuthManager {
     this.#saveToken(json.token);
   }
 
-  #saveToken(token) {
-    localStorage.setItem(this.#TOKEN_KEY, token);
+  #saveToken(token: string) {
+    localStorage.setItem(this.TOKEN_KEY, token);
   }
 
   getToken() {
-    return localStorage.getItem(this.#TOKEN_KEY);
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
   clearToken() {
-    localStorage.removeItem(this.#TOKEN_KEY);
+    localStorage.removeItem(this.TOKEN_KEY);
   }
 
   isAuthenticated() {

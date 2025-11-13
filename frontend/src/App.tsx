@@ -7,8 +7,10 @@ import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
 import { Entry } from './types/Entry';
 import { AuthManager } from './lib/AuthManager';
+import { ApiClient } from './lib/ApiClient';
 
 const authManager = new AuthManager();
+const api = new ApiClient(authManager);
 
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -22,24 +24,13 @@ export default function App() {
   };
 
   useEffect(() => {
-    const authManager = new AuthManager();
     authManager.loginRequest('andreas', '1234');
   });
 
   const handleSave = async (entry: Entry) => {
     try {
-      const token = authManager.getToken();
-      const headers: Record<string, string> = {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...(authManager.getAuthHeader() as Record<string, string>),
-      };
       const id = entry.id;
-      await fetch(`/api/pellets/${id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(entry),
-      });
+      const response = await api.put(`/api/pellets/${id}`, entry);
 
       await loadAllEntries();
     } catch (err) {
