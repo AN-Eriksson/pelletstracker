@@ -8,6 +8,8 @@ import SiteHeader from './components/SiteHeader';
 import { Entry } from './types/Entry';
 import { AuthManager } from './lib/AuthManager';
 
+const authManager = new AuthManager();
+
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
@@ -20,18 +22,25 @@ export default function App() {
   };
 
   useEffect(() => {
-    const authManager = new AuthManager
-    authManager.loginRequest('andreas', '1234')
-  })
+    const authManager = new AuthManager();
+    authManager.loginRequest('andreas', '1234');
+  });
 
   const handleSave = async (entry: Entry) => {
     try {
+      const token = authManager.getToken();
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(authManager.getAuthHeader() as Record<string, string>),
+      };
       const id = entry.id;
       await fetch(`/api/pellets/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(entry),
       });
+
       await loadAllEntries();
     } catch (err) {
       console.error(err);
