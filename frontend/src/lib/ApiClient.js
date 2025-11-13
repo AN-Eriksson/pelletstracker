@@ -23,7 +23,16 @@ export class ApiClient {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    return response;
+    const text = await response.text().catch(() => '');
+    if (!text) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      return text;
+    }
   }
 
   get(path) {

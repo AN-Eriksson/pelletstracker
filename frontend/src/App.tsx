@@ -43,7 +43,7 @@ export default function App() {
   const handleDelete = async (entry: Entry) => {
     try {
       const id = entry.id;
-      await fetch(`/api/pellets/${id}`, { method: 'DELETE' });
+      await api.delete(`/api/pellets/${id}`);
       await loadAllEntries();
     } catch (err) {
       console.error(err);
@@ -54,11 +54,9 @@ export default function App() {
 
   const loadAllEntries = useCallback(async () => {
     try {
-      const res = await fetch('/api/pellets');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const response = await api.get(`/api/pellets`);
 
-      setEntries(json?.data ?? json ?? []);
+      setEntries(response.data);
     } catch (err) {
       console.error('Failed to load entries', err);
     }
@@ -70,15 +68,8 @@ export default function App() {
 
   const addEntry = async (date: string, numberOfSacks: number) => {
     try {
-      const res = await fetch('/api/pellets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, numberOfSacks }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      const payload = { date, numberOfSacks }; 
+      const response = await api.post('/api/pellets', payload);
 
       await loadAllEntries();
     } catch (err) {
