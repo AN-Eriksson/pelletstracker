@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface Props {
-  onLogin: (username: string, password: string) => void;
+  onLogin: (username: string, password: string) => Promise<void>;
 }
 
 const LoginForm = ({ onLogin }: Props) => {

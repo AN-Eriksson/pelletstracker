@@ -45,7 +45,7 @@ export default function App() {
       await loadAllEntries();
     } catch (err) {
       console.error('Login failed', err);
-      throw err;
+      throw err; // rethrow so LoginForm can show it
     }
   };
 
