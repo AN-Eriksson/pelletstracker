@@ -21,6 +21,8 @@ const LoginForm = ({ onLogin }: Props) => {
       setError(err?.message ?? 'Inloggning misslyckades');
     } finally {
       setLoading(false);
+      setUsername('');
+      setPassword('');
     }
   };
 

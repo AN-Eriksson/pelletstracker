@@ -1,10 +1,14 @@
 export class ApiClient {
-  constructor(authManager) {
+  #authManager;
+  #opts;
+
+  constructor(authManager, opts) {
     this.defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
     this.authManager = authManager;
+    this.opts = opts;
   }
 
   async request(endpoint, { method, body = undefined }) {
@@ -18,6 +22,11 @@ export class ApiClient {
     }
 
     const response = await fetch(endpoint, init);
+
+    if (response.status === 401 || response.status === 403) {
+      // token expired / invalid
+      this.#handleUnauthorized();
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -46,5 +55,9 @@ export class ApiClient {
   }
   delete(path) {
     return this.request(path, { method: 'DELETE' });
+  }
+
+  #handleUnauthorized() {
+    this.opts.onUnauthorized();
   }
 }

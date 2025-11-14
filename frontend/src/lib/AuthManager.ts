@@ -1,5 +1,14 @@
 export class AuthManager {
   private readonly TOKEN_KEY: string = 'pelletstracker_jwt';
+  private onAuthChange?: (loggedIn: boolean) => void;
+
+  setOnAuthChange(callback?: (loggedIn: boolean) => void) {
+    this.onAuthChange = callback;
+  }
+
+  private emitAuthChange(value: boolean) {
+    this.onAuthChange?.(value);
+  }
 
   async loginRequest(username: string, password: string): Promise<void> {
     const credentials = { username, password };
@@ -17,6 +26,7 @@ export class AuthManager {
     const json = await response.json();
 
     this.#saveToken(json.token);
+    this.emitAuthChange(true);
   }
 
   #saveToken(token: string) {
@@ -27,8 +37,9 @@ export class AuthManager {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  clearToken() {
+  logOut() {
     localStorage.removeItem(this.TOKEN_KEY);
+    this.emitAuthChange(false);
   }
 
   isAuthenticated() {
