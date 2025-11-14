@@ -45,6 +45,7 @@ export default function App() {
       await loadAllEntries();
     } catch (err) {
       console.error('Login failed', err);
+      throw err;
     }
   };
 

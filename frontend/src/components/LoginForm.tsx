@@ -16,7 +16,7 @@ const LoginForm = ({ onLogin }: Props) => {
     setLoading(true);
 
     try {
-      onLogin(username, password);
+      await onLogin(username, password);
     } catch (err: any) {
       setError(err?.message ?? 'Inloggning misslyckades');
     } finally {
