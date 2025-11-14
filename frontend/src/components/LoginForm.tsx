@@ -27,7 +27,9 @@ const LoginForm = ({ onLogin }: Props) => {
   };
 
   return (
+    
     <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
+      <p><em>Psst.. användare är inte fullt implementerat ännu. För att testa - logga in med user:1234</em></p>
       <div>
         <label className="block text-sm font-medium mb-1" htmlFor="username">
           Användarnamn
