@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import PelletInputForm from './components/PelletInputForm';
 import RecentInputsTable from './components/RecentInputsTable';
 import LineChart from './components/LineChart';
@@ -6,10 +6,29 @@ import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
 import { Entry } from './types/Entry';
+import { AuthManager } from './lib/AuthManager';
+import { ApiClient } from './lib/ApiClient';
+import LoginForm from './components/LoginForm';
+
+const authManager = new AuthManager();
 
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(authManager.isAuthenticated());
+
+  useEffect(() => {
+    authManager.setOnAuthChange(setIsLoggedIn);
+    return () => {
+      authManager.setOnAuthChange(undefined);
+    };
+  }, [setIsLoggedIn]);
+
+  // create api client after registration (or useMemo)
+  const api = useMemo(
+    () => new ApiClient(authManager, { onUnauthorized: () => setIsLoggedIn(false) }),
+    [],
+  );
 
   const openEdit = (entry: Entry) => {
     setEntryToEdit(entry);
@@ -18,14 +37,22 @@ export default function App() {
     setEntryToEdit(null);
   };
 
+  const handleLogin = async (username: string, password: string) => {
+    try {
+      await authManager.loginRequest(username, password);
+      setIsLoggedIn(true);
+
+      await loadAllEntries();
+    } catch (err) {
+      console.error('Login failed', err);
+    }
+  };
+
   const handleSave = async (entry: Entry) => {
     try {
       const id = entry.id;
-      await fetch(`/api/pellets/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(entry),
-      });
+      const response = await api.put(`/api/pellets/${id}`, entry);
+
       await loadAllEntries();
     } catch (err) {
       console.error(err);
@@ -37,7 +64,7 @@ export default function App() {
   const handleDelete = async (entry: Entry) => {
     try {
       const id = entry.id;
-      await fetch(`/api/pellets/${id}`, { method: 'DELETE' });
+      await api.delete(`/api/pellets/${id}`);
       await loadAllEntries();
     } catch (err) {
       console.error(err);
@@ -48,11 +75,9 @@ export default function App() {
 
   const loadAllEntries = useCallback(async () => {
     try {
-      const res = await fetch('/api/pellets');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const response = await api.get(`/api/pellets`);
 
-      setEntries(json?.data ?? json ?? []);
+      setEntries(response.data);
     } catch (err) {
       console.error('Failed to load entries', err);
     }
@@ -64,15 +89,8 @@ export default function App() {
 
   const addEntry = async (date: string, numberOfSacks: number) => {
     try {
-      const res = await fetch('/api/pellets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, numberOfSacks }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+      const payload = { date, numberOfSacks };
+      const response = await api.post('/api/pellets', payload);
 
       await loadAllEntries();
     } catch (err) {
@@ -84,22 +102,27 @@ export default function App() {
     <div className="max-w-4xl mx-auto p-4 bg-white rounded-lg shadow-md">
       <SiteHeader />
 
-      <PelletInputForm onAddEntry={addEntry} />
+      {!isLoggedIn && <LoginForm onLogin={handleLogin} />}
 
-      <RecentInputsTable entries={entries} onEdit={openEdit} />
+      {isLoggedIn && (
+        <>
+          <PelletInputForm onAddEntry={addEntry} />
+          <RecentInputsTable entries={entries} onEdit={openEdit} />
 
-      {entryToEdit && (
-        <EditEntryModal
-          entry={entryToEdit}
-          onClose={closeEdit}
-          onSave={handleSave}
-          onDelete={handleDelete}
-        />
+          {entryToEdit && (
+            <EditEntryModal
+              entry={entryToEdit}
+              onClose={closeEdit}
+              onSave={handleSave}
+              onDelete={handleDelete}
+            />
+          )}
+
+          <Statistics entries={entries} />
+
+          <LineChart entries={entries} />
+        </>
       )}
-
-      <Statistics entries={entries} />
-
-      <LineChart entries={entries} />
     </div>
   );
 }
