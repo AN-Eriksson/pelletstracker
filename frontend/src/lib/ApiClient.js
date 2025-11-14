@@ -1,19 +1,20 @@
 export class ApiClient {
   #authManager;
   #opts;
+  #defaultHeaders;
 
   constructor(authManager, opts) {
-    this.defaultHeaders = {
+    this.#defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-    this.authManager = authManager;
-    this.opts = opts;
+    this.#authManager = authManager;
+    this.#opts = opts;
   }
 
   async request(endpoint, { method, body = undefined }) {
-    const authHeader = this.authManager.getAuthHeader();
-    const headers = { ...this.defaultHeaders, ...authHeader };
+    const authHeader = this.#authManager.getAuthHeader();
+    const headers = { ...this.#defaultHeaders, ...authHeader };
 
     const init = { method, headers };
 
@@ -24,7 +25,6 @@ export class ApiClient {
     const response = await fetch(endpoint, init);
 
     if (response.status === 401 || response.status === 403) {
-      // token expired / invalid
       this.#handleUnauthorized();
     }
 
