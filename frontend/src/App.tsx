@@ -8,6 +8,7 @@ import SiteHeader from './components/SiteHeader';
 import { Entry } from './types/Entry';
 import { AuthManager } from './lib/AuthManager';
 import { ApiClient } from './lib/ApiClient';
+import LoginForm from './components/LoginForm';
 
 const authManager = new AuthManager();
 const api = new ApiClient(authManager);
@@ -15,6 +16,7 @@ const api = new ApiClient(authManager);
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(false);
 
   const openEdit = (entry: Entry) => {
     setEntryToEdit(entry);
@@ -23,18 +25,28 @@ export default function App() {
     setEntryToEdit(null);
   };
 
-  useEffect(() => {
-    if (!authManager.isAuthenticated()) {
-      (async () => {
-        try {
-          authManager.loginRequest('andreas', '1234');
-        } catch (err) {
-          console.error('Login failed', err);
-        }
-      })
+  // useEffect(() => {
+  //   if (!authManager.isAuthenticated()) {
+  //     async () => {
+  //       try {
+  //         authManager.loginRequest('andreas', '1234');
+  //       } catch (err) {
+  //         console.error('Login failed', err);
+  //       }
+  //     };
+  //   }
+  // }, []);
+
+  const handleLogin = async (username: string, password: string) => {
+    try {
+      await authManager.loginRequest(username, password);
+      setIsLoggedIn(true);
+      
+      await loadAllEntries();
+    } catch (err) {
+      console.error('Login failed', err);
     }
-    
-  }, []);
+  };
 
   const handleSave = async (entry: Entry) => {
     try {
@@ -77,7 +89,7 @@ export default function App() {
 
   const addEntry = async (date: string, numberOfSacks: number) => {
     try {
-      const payload = { date, numberOfSacks }; 
+      const payload = { date, numberOfSacks };
       const response = await api.post('/api/pellets', payload);
 
       await loadAllEntries();
@@ -89,6 +101,10 @@ export default function App() {
   return (
     <div className="max-w-4xl mx-auto p-4 bg-white rounded-lg shadow-md">
       <SiteHeader />
+
+      {!isLoggedIn && (
+        <LoginForm onLogin={handleLogin} />
+      )} 
 
       <PelletInputForm onAddEntry={addEntry} />
 
