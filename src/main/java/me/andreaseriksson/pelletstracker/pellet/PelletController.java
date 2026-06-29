@@ -13,7 +13,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import me.andreaseriksson.pelletstracker.common.ApiResponse;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * REST controller for managing pellet entries.
@@ -60,7 +59,7 @@ public class PelletController {
      * @throws ResourceNotFoundException if no pellet with the given ID is found
      */
     @GetMapping("/{id}")
-    ApiResponse<PelletEntry> findById(@PathVariable String id) {
+    ApiResponse<PelletEntry> findById(@PathVariable Long id) {
         Optional<PelletEntry> pellet = pelletRepository.findById(id);
         if (pellet.isEmpty()) {
             throw new ResourceNotFoundException("Pellet not found with id " + id);
@@ -108,13 +107,16 @@ public class PelletController {
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
-    void update(@Valid @RequestBody PelletEntry pelletEntry, @PathVariable String id) {
-        if (!pelletRepository.existsById(id)) {
+    void update(@Valid @RequestBody PelletEntry pelletEntry, @PathVariable Long id) {
+        Optional<PelletEntry> existing = pelletRepository.findById(id);
+        if (existing.isEmpty()) {
             throw new ResourceNotFoundException("Pellet not found with id " + id);
         }
 
-        pelletEntry.setId(id);
-        pelletRepository.save(pelletEntry);
+        PelletEntry toUpdate = existing.get();
+        toUpdate.setDate(pelletEntry.getDate());
+        toUpdate.setNumberOfSacks(pelletEntry.getNumberOfSacks());
+        pelletRepository.save(toUpdate);
     }
 
     /**
@@ -124,7 +126,7 @@ public class PelletController {
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
-    void delete(@PathVariable String id) {
+    void delete(@PathVariable Long id) {
         pelletRepository.deleteById(id);
     }
 

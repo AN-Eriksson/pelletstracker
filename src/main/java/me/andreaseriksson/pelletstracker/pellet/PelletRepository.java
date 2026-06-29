@@ -1,6 +1,6 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository interface for managing Pellet entities in MongoDB.
- * Extends MongoRepository to provide CRUD operations.
+ * Repository interface for managing Pellet entities in PostgreSQL.
+ * Extends JpaRepository to provide CRUD operations.
  */
 @Repository
-public interface PelletRepository extends MongoRepository<PelletEntry, String> {
+public interface PelletRepository extends JpaRepository<PelletEntry, Long> {
 
     /**
      * Finds a Pellet by its date.

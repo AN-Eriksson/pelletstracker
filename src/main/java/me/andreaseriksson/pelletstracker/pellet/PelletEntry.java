@@ -1,11 +1,15 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
 import java.util.Objects;
@@ -13,18 +17,24 @@ import java.util.Objects;
 /**
  * Represents a pellet entry with a unique date and the number of sacks.
  */
-@Document
+@Entity
+@Table(
+        name = "pellet_entries",
+        uniqueConstraints = @UniqueConstraint(name = "uk_pellet_entries_date", columnNames = "entry_date")
+)
 public class PelletEntry {
     /**
      * The unique identifier for the pellet entry.
      */
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false, updatable = false)
+    private Long id;
 
     /**
      * The date of the pellet entry. Must be unique.
      */
-    @Indexed(unique = true)
+    @Column(name = "entry_date", nullable = false, unique = true)
     @JsonFormat(pattern = "yyyy-MM-dd")
     @NotNull(message = "date must not be null")
     private LocalDate date;
@@ -33,6 +43,8 @@ public class PelletEntry {
      * The number of sacks for the pellet entry. Must be at least 1.
      */
     @Min(1)
+    @NotNull(message = "numberOfSacks must not be null")
+    @Column(nullable = false)
     private Integer numberOfSacks;
 
     /**
@@ -56,7 +68,7 @@ public class PelletEntry {
      *
      * @return the id
      */
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
@@ -94,15 +106,6 @@ public class PelletEntry {
      */
     public void setNumberOfSacks(Integer numberOfSacks) {
         this.numberOfSacks = numberOfSacks;
-    }
-
-    /**
-     * Sets the unique identifier of the pellet entry.
-     *
-     * @param id the id to set
-     */
-    public void setId(String id) {
-        this.id = id;
     }
 
     @Override
