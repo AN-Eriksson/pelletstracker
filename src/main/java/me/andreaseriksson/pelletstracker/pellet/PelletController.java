@@ -1,6 +1,7 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
 import jakarta.validation.Valid;
+import me.andreaseriksson.pelletstracker.dto.CreatePelletEntryDto;
 import me.andreaseriksson.pelletstracker.exception.ResourceNotFoundException;
 import me.andreaseriksson.pelletstracker.user.AppUser;
 import me.andreaseriksson.pelletstracker.user.AppUserRepository;
@@ -15,7 +16,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import me.andreaseriksson.pelletstracker.common.ApiResponse;
+import me.andreaseriksson.pelletstracker.dto.ApiResponse;
 
 /**
  * REST controller for managing pellet entries.
@@ -94,25 +95,26 @@ public class PelletController {
      * If a pellet entry with the same date exists for the user, its number of sacks is incremented
      * by the value from the request. Otherwise, a new pellet entry is created.
      *
-     * @param pelletEntry the pellet entry to create or update
+     * @param dto the pellet entry data to create or update
      * @param authentication the current authenticated user
      * @return an ApiResponse containing the created or updated pellet entry
      */
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
-    ApiResponse<PelletEntry> createOrUpdate(@Valid @RequestBody PelletEntry pelletEntry, Authentication authentication) {
+    ApiResponse<PelletEntry> createOrUpdate(@Valid @RequestBody CreatePelletEntryDto dto, Authentication authentication) {
         AppUser currentUser = getCurrentUser(authentication);
-        Optional<PelletEntry> existing = pelletRepository.findByDateAndUser(pelletEntry.getDate(), currentUser);
+        Optional<PelletEntry> existing = pelletRepository.findByDateAndUser(dto.getDate(), currentUser);
 
         PelletEntry savedEntry;
         if (existing.isPresent()) {
             PelletEntry toUpdate = existing.get();
-            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + pelletEntry.getNumberOfSacks());
+            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + dto.getNumberOfSacks());
             savedEntry = pelletRepository.save(toUpdate);
 
             logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
             return new ApiResponse<>("success", "Pellet entry updated", savedEntry);
         } else {
+            PelletEntry pelletEntry = new PelletEntry(dto.getDate(), dto.getNumberOfSacks());
             pelletEntry.setUser(currentUser);
 
             savedEntry = pelletRepository.save(pelletEntry);
@@ -125,22 +127,22 @@ public class PelletController {
     /**
      * Updates an existing pellet entry with the specified ID for the authenticated user.
      *
-     * @param pelletEntry the updated pellet data
-     * @param id          the ID of the pellet to update
+     * @param dto the updated pellet data
+     * @param id the ID of the pellet to update
      * @param authentication the current authenticated user
      * @throws ResourceNotFoundException if no pellet with the given ID is found
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
-    void update(@Valid @RequestBody PelletEntry pelletEntry,
+    void update(@Valid @RequestBody CreatePelletEntryDto dto,
                 @PathVariable Long id,
                 Authentication authentication) {
         AppUser currentUser = getCurrentUser(authentication);
         PelletEntry existing = pelletRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Pellet not found with id " + id));
 
-        existing.setDate(pelletEntry.getDate());
-        existing.setNumberOfSacks(pelletEntry.getNumberOfSacks());
+        existing.setDate(dto.getDate());
+        existing.setNumberOfSacks(dto.getNumberOfSacks());
         pelletRepository.save(existing);
     }
 

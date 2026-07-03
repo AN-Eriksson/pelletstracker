@@ -1,4 +1,4 @@
-package me.andreaseriksson.pelletstracker.common;
+package me.andreaseriksson.pelletstracker.dto;
 
 /**
  * Generic API response wrapper for REST endpoints.
