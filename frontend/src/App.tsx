@@ -26,7 +26,7 @@ export default function App() {
 
   // create api client after registration (or useMemo)
   const api = useMemo(
-    () => new ApiClient(authManager, { onUnauthorized: () => setIsLoggedIn(false) }),
+    () => new ApiClient(authManager, { onUnauthorized: () => authManager.logOut() }),
     [],
   );
 

@@ -51,6 +51,7 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
 
   const handleDelete = () => {
     if (!entry) return;
+    if (!window.confirm('Ta bort posten?')) return;
 
     onDelete(entry);
     onClose();
