@@ -1,0 +1,7 @@
+.env
+.git
+.gradle
+.idea
+build
+logs
+frontend/node_modules

@@ -14,6 +14,8 @@ services:
       APP_BOOTSTRAP_USERNAME: "${APP_BOOTSTRAP_USERNAME}"
       APP_BOOTSTRAP_PASSWORD: "${APP_BOOTSTRAP_PASSWORD}"
       APP_BOOTSTRAP_ROLE: "${APP_BOOTSTRAP_ROLE}"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_EXP_MS: "${JWT_EXP_MS}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -22,6 +24,8 @@ services:
   postgres:
     image: postgres:17
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: "${POSTGRES_DB}"
       POSTGRES_USER: "${POSTGRES_USER}"
