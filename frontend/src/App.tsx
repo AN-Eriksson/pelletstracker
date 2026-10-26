@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import PelletInputForm from './components/PelletInputForm';
 import RecentInputsTable from './components/RecentInputsTable';
-import LineChart from './components/LineChart';
+import ConsumptionChart from './components/ConsumptionChart';
 import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
@@ -102,6 +102,7 @@ export default function App() {
       await loadAllEntries();
     } catch (err) {
       console.error(err);
+      throw err; // rethrow so PelletInputForm keeps the input
     }
   };
 
@@ -127,7 +128,7 @@ export default function App() {
 
           <Statistics entries={entries} />
 
-          <LineChart entries={entries} />
+          <ConsumptionChart entries={entries} />
         </>
       )}
     </div>
