@@ -22,3 +22,12 @@ export const formatAsSacks = (kg: number) => {
   const label = sacks === 1 ? 'säck' : 'säckar';
   return `${exact ? '' : '≈ '}${formatNumber(sacks)} ${label}`;
 };
+
+/**
+ * Converts a typed amount in the given unit to whole kg, or null when it is not a positive integer
+ */
+export const amountToKg = (amount: string, unit: Unit): number | null => {
+  const parsed = parseInt(amount, 10);
+  if (Number.isNaN(parsed) || parsed < 1) return null;
+  return unit === 'sacks' ? sacksToKg(parsed) : parsed;
+};

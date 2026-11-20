@@ -32,7 +32,7 @@ export default function RecentInputsTable({ entries = [], onEdit }: Props) {
   return (
     <div className="bg-white rounded shadow overflow-hidden">
       <h2 className="px-4 py-3 text-lg font-semibold border-b border-gray-200">
-        Senaste inmatningar
+        Senaste förbrukning
       </h2>
 
       {entries.length === 0 ? (

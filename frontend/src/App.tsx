@@ -6,6 +6,7 @@ import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
 import InventoryCard from './components/InventoryCard';
+import InventorySheet from './components/InventorySheet';
 import { Entry } from './types/Entry';
 import { Delivery } from './types/Delivery';
 import { AuthManager } from './lib/AuthManager';
@@ -19,6 +20,7 @@ export default function App() {
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [deliveryToEdit, setDeliveryToEdit] = useState<Delivery | null>(null);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(authManager.isAuthenticated());
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export default function App() {
     setEntryToEdit(null);
     setDeliveries([]);
     setDeliveryToEdit(null);
+    setIsInventoryOpen(false);
   };
 
   const handleSave = async (entry: Entry) => {
@@ -120,7 +123,7 @@ export default function App() {
       await loadAllDeliveries();
     } catch (err) {
       console.error(err);
-      throw err; // rethrow so PelletInputForm keeps the input
+      throw err; // rethrow so InventorySheet keeps the input
     }
   };
 
@@ -168,11 +171,11 @@ export default function App() {
       {isLoggedIn && (
         <main className="space-y-4 sm:space-y-6">
           {/* Most used first: log sacks, then the stock, this week's numbers, the trend and the history */}
-          <PelletInputForm onAddEntry={addEntry} onAddDelivery={addDelivery} />
+          <PelletInputForm onAddEntry={addEntry} />
           <InventoryCard
             entries={entries}
             deliveries={deliveries}
-            onEditDelivery={setDeliveryToEdit}
+            onEdit={() => setIsInventoryOpen(true)}
           />
           <Statistics entries={entries} />
           <ConsumptionChart entries={entries} />
@@ -187,6 +190,16 @@ export default function App() {
             />
           )}
 
+          {isInventoryOpen && (
+            <InventorySheet
+              deliveries={deliveries}
+              onAddDelivery={addDelivery}
+              onEditDelivery={setDeliveryToEdit}
+              onClose={() => setIsInventoryOpen(false)}
+            />
+          )}
+
+          {/* Rendered after the sheet so it opens on top of it */}
           {deliveryToEdit && (
             <EditEntryModal
               entry={deliveryToEdit}
