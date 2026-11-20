@@ -19,8 +19,12 @@ export class AuthManager {
       body: JSON.stringify(credentials),
     });
 
+    if (response.status === 401) {
+      throw new Error('Fel användarnamn eller lösenord');
+    }
+
     if (!response.ok) {
-      throw new Error(`Login failed: ${response.status}`);
+      throw new Error(`Inloggningen misslyckades (${response.status})`);
     }
 
     const json = await response.json();

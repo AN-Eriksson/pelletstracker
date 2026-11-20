@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Entry } from '../types/Entry';
+import { formatAsSacks, formatKg } from '../lib/units';
 
 const toDateStart = (d: string | Date) => {
   const date = typeof d === 'string' ? new Date(d) : new Date(d);
@@ -15,7 +16,7 @@ const sumSince = (entries: Entry[], days: number) => {
 
   return entries.reduce((acc, e) => {
     const ed = toDateStart(e.date);
-    return ed >= cutoff ? acc + Number(e.numberOfSacks || 0) : acc;
+    return ed >= cutoff ? acc + Number(e.amountKg || 0) : acc;
   }, 0);
 };
 
@@ -25,7 +26,7 @@ const sumSinceDate = (entries: Entry[], fromDate: string | Date) => {
   return entries.reduce((acc, e) => {
     const ed = toDateStart(e.date);
 
-    return ed >= cutoff ? acc + Number(e.numberOfSacks || 0) : acc;
+    return ed >= cutoff ? acc + Number(e.amountKg || 0) : acc;
   }, 0);
 };
 
@@ -50,12 +51,12 @@ export default function Statistics({ entries = [] }: Props) {
     const total14 = sumSince(entries, 14);
     const total7 = sumSince(entries, 7);
     const total3 = sumSince(entries, 3);
-    const avg30 = +(total30 / 30).toFixed(2);
-    const avg14 = +(total14 / 14).toFixed(2);
-    const avg7 = +(total7 / 7).toFixed(2);
-    const avg3 = +(total3 / 3).toFixed(2);
+    const avg30 = total30 / 30;
+    const avg14 = total14 / 14;
+    const avg7 = total7 / 7;
+    const avg3 = total3 / 3;
     const weekTotal = sumSinceDate(entries, startOfWeek());
-    const overallTotal = entries.reduce((acc, e) => acc + Number(e.numberOfSacks || 0), 0);
+    const overallTotal = entries.reduce((acc, e) => acc + Number(e.amountKg || 0), 0);
     return { total30, total14, total7, total3, avg30, avg14, avg7, avg3, weekTotal, overallTotal };
   }, [entries]);
 
@@ -63,28 +64,30 @@ export default function Statistics({ entries = [] }: Props) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
       <div className="p-4 bg-white rounded shadow">
         <div className="text-xs text-gray-500">Denna vecka</div>
-        <div className="text-2xl font-bold">{stats.weekTotal}</div>
+        <div className="text-2xl font-bold">{formatKg(stats.weekTotal)}</div>
+        <div className="text-xs text-gray-400">{formatAsSacks(stats.weekTotal)}</div>
       </div>
 
       <div className="p-4 bg-white rounded shadow">
-        <div className="text-xs text-gray-500">Snitt (30 dgr)</div>
-        <div className="text-2xl font-bold">{stats.avg30}</div>
-        <div className="text-xs text-gray-400">Totalt: {stats.total30}</div>
+        <div className="text-xs text-gray-500">Snitt per dag (30 dgr)</div>
+        <div className="text-2xl font-bold">{formatKg(stats.avg30)}</div>
+        <div className="text-xs text-gray-400">Totalt: {formatKg(stats.total30)}</div>
       </div>
 
       <div className="p-4 bg-white rounded shadow">
-        <div className="text-xs text-gray-500">Snitt (14 dgr)</div>
-        <div className="text-2xl font-bold">{stats.avg14}</div>
-        <div className="text-xs text-gray-400">Totalt: {stats.total14}</div>
+        <div className="text-xs text-gray-500">Snitt per dag (14 dgr)</div>
+        <div className="text-2xl font-bold">{formatKg(stats.avg14)}</div>
+        <div className="text-xs text-gray-400">Totalt: {formatKg(stats.total14)}</div>
       </div>
 
       <div className="p-4 bg-white rounded shadow">
-        <div className="text-xs text-gray-500">Snitt (7 / 3 dgr)</div>
+        <div className="text-xs text-gray-500">Snitt per dag (7 / 3 dgr)</div>
         <div className="text-2xl font-bold">
-          {stats.avg7} / {stats.avg3}
+          {stats.avg7.toLocaleString('sv-SE', { maximumFractionDigits: 1 })} /{' '}
+          {formatKg(stats.avg3)}
         </div>
         <div className="text-xs text-gray-400">
-          Totalt: {stats.total7} / {stats.total3}
+          Totalt: {stats.total7} / {formatKg(stats.total3)}
         </div>
       </div>
     </div>

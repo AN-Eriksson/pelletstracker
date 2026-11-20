@@ -12,8 +12,8 @@ public class CreatePelletEntryDto {
     private LocalDate date;
 
     @Min(1)
-    @NotNull(message = "numberOfSacks must not be null")
-    private Integer numberOfSacks;
+    @NotNull(message = "amountKg must not be null")
+    private Integer amountKg;
 
     public LocalDate getDate() {
         return date;
@@ -23,11 +23,11 @@ public class CreatePelletEntryDto {
         this.date = date;
     }
 
-    public Integer getNumberOfSacks() {
-        return numberOfSacks;
+    public Integer getAmountKg() {
+        return amountKg;
     }
 
-    public void setNumberOfSacks(Integer numberOfSacks) {
-        this.numberOfSacks = numberOfSacks;
+    public void setAmountKg(Integer amountKg) {
+        this.amountKg = amountKg;
     }
 }

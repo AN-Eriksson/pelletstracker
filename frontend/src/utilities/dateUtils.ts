@@ -47,7 +47,7 @@ export const getIsoWeek = (dateInput: string | Date): number => {
 /**
  * Fills missing dates from the first entry until `until` (default: today, or the last
  * entry if that is later) with zero values
- * @param {Array} data - Array of entries with date and numberOfSacks properties
+ * @param {Array} data - Array of entries with date and amountKg properties
  * @returns {Array} - Array sorted by date with missing dates filled with zero values
  */
 export const fillMissingDates = (data: Entry[], until: Date = new Date()): Entry[] => {
@@ -75,7 +75,7 @@ export const fillMissingDates = (data: Entry[], until: Date = new Date()): Entry
     } else {
       result.push({
         date: dateKey,
-        numberOfSacks: 0,
+        amountKg: 0,
       });
     }
   }

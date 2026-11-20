@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Entry } from '../types/Entry';
 import { parseLocalDate } from '../utilities/dateUtils';
+import { formatAsSacks, formatKg } from '../lib/units';
 
 interface Props {
   entries?: Entry[];
@@ -46,7 +47,7 @@ export default function RecentInputsTable({ entries = [], onEdit }: Props) {
                     Datum
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Antal säckar
+                    Mängd
                   </th>
                   <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Åtgärder
@@ -57,7 +58,10 @@ export default function RecentInputsTable({ entries = [], onEdit }: Props) {
                 {latestEntries.map(entry => (
                   <tr key={entry.id} className="hover:bg-gray-50">
                     <td className="px-4 py-2">{formatDate(entry.date)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">{entry.numberOfSacks}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">
+                      {formatKg(entry.amountKg)}
+                      <div className="text-xs text-gray-400">{formatAsSacks(entry.amountKg)}</div>
+                    </td>
                     <td className="px-4 py-2 text-right">
                       <button
                         type="button"

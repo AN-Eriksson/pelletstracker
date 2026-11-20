@@ -45,12 +45,12 @@ public class PelletEntry {
     private LocalDate date;
 
     /**
-     * The number of sacks for the pellet entry.
+     * The amount of pellets in kilograms for the pellet entry.
      */
     @Min(1)
-    @NotNull(message = "numberOfSacks must not be null")
-    @Column(nullable = false)
-    private Integer numberOfSacks;
+    @NotNull(message = "amountKg must not be null")
+    @Column(name = "amount_kg", nullable = false)
+    private Integer amountKg;
 
 
     @JsonIgnore
@@ -72,14 +72,14 @@ public class PelletEntry {
     public PelletEntry() {}
 
     /**
-     * Constructs a pellet entry with the specified date and number of sacks.
+     * Constructs a pellet entry with the specified date and amount in kilograms.
      *
      * @param date the date of the pellet entry
-     * @param numberOfSacks the number of sacks
+     * @param amountKg the amount in kilograms
      */
-    public PelletEntry(LocalDate date, Integer numberOfSacks) {
+    public PelletEntry(LocalDate date, Integer amountKg) {
         this.setDate(date);
-        this.setNumberOfSacks(numberOfSacks);
+        this.setAmountKg(amountKg);
     }
 
     /**
@@ -110,25 +110,25 @@ public class PelletEntry {
     }
 
     /**
-     * Returns the number of sacks.
+     * Returns the amount in kilograms.
      *
-     * @return the number of sacks
+     * @return the amount in kilograms
      */
-    public Integer getNumberOfSacks() {
-        return numberOfSacks;
+    public Integer getAmountKg() {
+        return amountKg;
     }
 
     /**
-     * Sets the number of sacks.
+     * Sets the amount in kilograms.
      *
-     * @param numberOfSacks the number of sacks to set
+     * @param amountKg the amount in kilograms to set
      */
-    public void setNumberOfSacks(Integer numberOfSacks) {
-        this.numberOfSacks = numberOfSacks;
+    public void setAmountKg(Integer amountKg) {
+        this.amountKg = amountKg;
     }
 
     @Override
     public String toString() {
-        return String.format("PelletEntry{id=%s, date=%s, numberOfSacks=%s}", id, date, numberOfSacks);
+        return String.format("PelletEntry{id=%s, date=%s, amountKg=%s}", id, date, amountKg);
     }
 }

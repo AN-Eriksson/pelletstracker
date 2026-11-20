@@ -92,7 +92,7 @@ public class PelletController {
     /**
      * Creates a new pellet entry or updates an existing one based on date for the authenticated user.
      * <p>
-     * If a pellet entry with the same date exists for the user, its number of sacks is incremented
+     * If a pellet entry with the same date exists for the user, its amount in kilograms is incremented
      * by the value from the request. Otherwise, a new pellet entry is created.
      *
      * @param dto the pellet entry data to create or update
@@ -108,13 +108,13 @@ public class PelletController {
         PelletEntry savedEntry;
         if (existing.isPresent()) {
             PelletEntry toUpdate = existing.get();
-            toUpdate.setNumberOfSacks(toUpdate.getNumberOfSacks() + dto.getNumberOfSacks());
+            toUpdate.setAmountKg(toUpdate.getAmountKg() + dto.getAmountKg());
             savedEntry = pelletRepository.save(toUpdate);
 
             logger.info("LOGGER: Updated and saved pellet entry: {}", savedEntry);
             return new ApiResponse<>("success", "Pellet entry updated", savedEntry);
         } else {
-            PelletEntry pelletEntry = new PelletEntry(dto.getDate(), dto.getNumberOfSacks());
+            PelletEntry pelletEntry = new PelletEntry(dto.getDate(), dto.getAmountKg());
             pelletEntry.setUser(currentUser);
 
             savedEntry = pelletRepository.save(pelletEntry);
@@ -142,7 +142,7 @@ public class PelletController {
                 .orElseThrow(() -> new ResourceNotFoundException("Pellet not found with id " + id));
 
         existing.setDate(dto.getDate());
-        existing.setNumberOfSacks(dto.getNumberOfSacks());
+        existing.setAmountKg(dto.getAmountKg());
         pelletRepository.save(existing);
     }
 
@@ -178,15 +178,15 @@ public class PelletController {
     }
 
     /**
-     * Retrieves the total number of sacks for a given ISO week and year for the authenticated user.
+     * Retrieves the total amount in kilograms for a given ISO week and year for the authenticated user.
      * <p>
-     * Calculates the start and end dates for the specified week and sums the number of sacks
+     * Calculates the start and end dates for the specified week and sums the amount in kilograms
      * for all of the user's pellet entries within that week.
      *
      * @param week the ISO week number (1-53)
      * @param year the year for which to calculate the total
      * @param authentication the current authenticated user
-     * @return an ApiResponse containing the total number of sacks for the specified week and year
+     * @return an ApiResponse containing the total amount in kilograms for the specified week and year
      */
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/weeks/{year}/{week}/total")
@@ -201,11 +201,11 @@ public class PelletController {
 
         logger.info("LOGGER: Querying pellet entries from {} to {}", startOfWeek, endOfWeek);
 
-        int totalNumberOfSacks = 0;
+        int totalKg = 0;
         for (PelletEntry entry : pelletRepository.findByDateBetweenAndUser(startOfWeek, endOfWeek, currentUser)) {
-            totalNumberOfSacks += entry.getNumberOfSacks();
+            totalKg += entry.getAmountKg();
         }
 
-        return new ApiResponse<>("success", "Total sacks for the week", totalNumberOfSacks);
+        return new ApiResponse<>("success", "Total kg for the week", totalKg);
     }
 }

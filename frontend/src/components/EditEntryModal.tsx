@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Entry } from '../types/Entry';
+import { formatAsSacks } from '../lib/units';
 
 interface Props {
   entry: Entry,
@@ -10,7 +11,7 @@ interface Props {
 
 const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
   const [date, setDate] = useState('');
-  const [numberOfSacks, setNumberOfSacks] = useState('');
+  const [amountKg, setAmountKg] = useState('');
 
   const toInputDate = (date?: string | Date): string => {
     if (!date) {
@@ -30,12 +31,12 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
   useEffect(() => {
     if (!entry) {
       setDate('');
-      setNumberOfSacks('');
+      setAmountKg('');
       return;
     }
 
     setDate(toInputDate(entry.date));
-    setNumberOfSacks(String(entry.numberOfSacks ?? ''));
+    setAmountKg(String(entry.amountKg ?? ''));
   }, [entry]);
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
@@ -44,7 +45,7 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
     onSave({
       ...entry,
       date,
-      numberOfSacks: Number(numberOfSacks) || 0,
+      amountKg: Number(amountKg) || 0,
     });
     onClose();
   };
@@ -78,13 +79,18 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
         </label>
 
         <label className="block mb-4">
-          <div className="text-xs text-gray-600 mb-1">Antal säckar</div>
+          <div className="flex justify-between text-xs text-gray-600 mb-1">
+            <span>Mängd (kg)</span>
+            {Number(amountKg) > 0 && (
+              <span className="tabular-nums">{formatAsSacks(Number(amountKg))}</span>
+            )}
+          </div>
           <input
             type="number"
-            min="0"
+            min="1"
             step="1"
-            value={numberOfSacks}
-            onChange={e => setNumberOfSacks(e.target.value)}
+            value={amountKg}
+            onChange={e => setAmountKg(e.target.value)}
             className="w-full border rounded px-3 py-2"
             required
           />

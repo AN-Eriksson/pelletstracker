@@ -1,9 +1,10 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { stripTimeFromDate } from '../utilities/dateUtils';
 import SegmentedControl, { Option } from './SegmentedControl';
+import { Unit, formatKg, sacksToKg } from '../lib/units';
 
 interface Props {
-  onAddEntry: (date: string, numberOfSacks: number) => Promise<void>;
+  onAddEntry: (date: string, amountKg: number) => Promise<void>;
 }
 
 const todayIso = () => stripTimeFromDate(new Date());
@@ -16,11 +17,17 @@ const yesterdayIso = () => {
 
 const QUICK_PICKS: Option<string>[] = ['1', '2', '3', '4'].map(n => ({ value: n, label: n }));
 
+const UNIT_OPTIONS: Option<Unit>[] = [
+  { value: 'sacks', label: 'Säckar' },
+  { value: 'kg', label: 'kg' },
+];
+
 export default function PelletInputForm({ onAddEntry }: Props) {
   const dateId = useId();
-  const sacksId = useId();
+  const amountId = useId();
   const [date, setDate] = useState(todayIso);
-  const [numberOfSacks, setNumberOfSacks] = useState('');
+  const [unit, setUnit] = useState<Unit>('sacks');
+  const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
 
   // If the tab stays open past midnight, move the default date along to the new day,
@@ -46,18 +53,27 @@ export default function PelletInputForm({ onAddEntry }: Props) {
     { value: yesterdayIso(), label: 'Igår' },
   ];
 
+  const amountParsed = parseInt(amount, 10);
+  const isValidAmount = !Number.isNaN(amountParsed) && amountParsed >= 1;
+  const amountKg = unit === 'sacks' ? sacksToKg(amountParsed) : amountParsed;
+
+  // The entered amount means something else in the other unit, so start over
+  const handleUnitChange = (newUnit: Unit) => {
+    setUnit(newUnit);
+    setAmount('');
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const numberOfSacksParsed = parseInt(numberOfSacks, 10);
-    if (!date || Number.isNaN(numberOfSacksParsed) || numberOfSacksParsed < 1) {
+    if (!date || !isValidAmount) {
       return;
     }
 
     try {
       setLoading(true);
-      await onAddEntry(date, numberOfSacksParsed);
-      setNumberOfSacks('');
+      await onAddEntry(date, amountKg);
+      setAmount('');
     } catch (err) {
       console.error(err);
     } finally {
@@ -95,23 +111,37 @@ export default function PelletInputForm({ onAddEntry }: Props) {
         </div>
 
         <div>
-          <label htmlFor={sacksId} className="block text-sm font-medium text-gray-700 mb-1">
-            Antal säckar
-          </label>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <label htmlFor={amountId} className="block text-sm font-medium text-gray-700">
+              {unit === 'sacks' ? 'Antal säckar' : 'Mängd (kg)'}
+            </label>
+            {unit === 'sacks' && isValidAmount && (
+              <span className="text-xs text-gray-500 tabular-nums">= {formatKg(amountKg)}</span>
+            )}
+          </div>
           <div className="flex gap-2">
             <SegmentedControl
-              label="Välj antal säckar"
-              options={QUICK_PICKS}
-              value={numberOfSacks}
-              onChange={setNumberOfSacks}
+              label="Enhet"
+              options={UNIT_OPTIONS}
+              value={unit}
+              onChange={handleUnitChange}
               size="md"
             />
+            {unit === 'sacks' && (
+              <SegmentedControl
+                label="Välj antal säckar"
+                options={QUICK_PICKS}
+                value={amount}
+                onChange={setAmount}
+                size="md"
+              />
+            )}
             <input
-              id={sacksId}
+              id={amountId}
               type="number"
               inputMode="numeric"
-              value={numberOfSacks}
-              onChange={e => setNumberOfSacks(e.target.value)}
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
               min="1"
               step="1"
               required

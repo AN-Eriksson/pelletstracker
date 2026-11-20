@@ -42,7 +42,7 @@ class PelletControllerTest {
 
         testDto = new CreatePelletEntryDto();
         testDto.setDate(LocalDate.now());
-        testDto.setNumberOfSacks(5);
+        testDto.setAmountKg(80);
     }
 
     @Test
@@ -60,7 +60,7 @@ class PelletControllerTest {
 
     @Test
     void createOrUpdate_shouldUpdateExistingEntry() {
-        PelletEntry existing = new PelletEntry(LocalDate.now(), 3);
+        PelletEntry existing = new PelletEntry(LocalDate.now(), 48);
         when(authentication.getName()).thenReturn("testuser");
         when(appUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(pelletRepository.findByDateAndUser(testDto.getDate(), testUser)).thenReturn(Optional.of(existing));

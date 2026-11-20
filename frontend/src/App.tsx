@@ -94,9 +94,9 @@ export default function App() {
     loadAllEntries();
   }, [loadAllEntries]);
 
-  const addEntry = async (date: string, numberOfSacks: number) => {
+  const addEntry = async (date: string, amountKg: number) => {
     try {
-      const payload = { date, numberOfSacks };
+      const payload = { date, amountKg };
       const response = await api.post('/api/pellets', payload);
 
       await loadAllEntries();

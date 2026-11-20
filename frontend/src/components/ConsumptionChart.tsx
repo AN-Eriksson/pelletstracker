@@ -59,7 +59,7 @@ export default function ConsumptionChart({ entries = [] }: Props) {
           <canvas
             ref={canvasRef}
             role="img"
-            aria-label={view === 'week' ? 'Säckar per vecka' : 'Säckar per dag'}
+            aria-label={view === 'week' ? 'Förbrukning i kg per vecka' : 'Förbrukning i kg per dag'}
           />
         </div>
       ) : (

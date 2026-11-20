@@ -2,6 +2,7 @@ import Chart from 'chart.js/auto';
 import type { TooltipItem } from 'chart.js';
 import { fillMissingDates, getIsoWeek, parseLocalDate, startOfWeek } from '../utilities/dateUtils';
 import { Entry } from '../types/Entry';
+import { formatAsSacks, formatKg } from './units';
 
 export type ChartView = 'week' | 'day';
 export type ChartRange = '30d' | '3m' | 'all';
@@ -20,10 +21,9 @@ const GRID_COLOR = '#e5e7eb'; // gray-200
 // Rolling average window: 7 days in the daily view, 4 weeks in the weekly view
 const AVERAGE_WINDOW: Record<ChartView, number> = { day: 7, week: 4 };
 
-const formatSacks = (value: number) => {
-  if (value === 0) return 'Inga säckar';
-  const formatted = value.toLocaleString('sv-SE', { maximumFractionDigits: 1 });
-  return `${formatted} ${value === 1 ? 'säck' : 'säckar'}`;
+const formatAmount = (kg: number) => {
+  if (kg === 0) return 'Ingen förbrukning';
+  return `${formatKg(kg)} (${formatAsSacks(kg)})`;
 };
 
 const shortDate = (d: Date) => d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
@@ -52,7 +52,7 @@ export const buildBuckets = (entries: Entry[], view: ChartView, range: ChartRang
 
   let buckets: Bucket[] = days.map(e => ({
     start: parseLocalDate(e.date),
-    total: Number(e.numberOfSacks || 0),
+    total: Number(e.amountKg || 0),
     average: null,
   }));
 
@@ -92,7 +92,7 @@ export class ConsumptionChartManager {
   }
 
   /**
-   * Renders sacks per day or per week as bars, with a rolling average as a line.
+   * Renders kg per day or per week as bars, with a rolling average as a line.
    * Replaces any chart previously rendered on the canvas.
    */
   render(entries: Entry[], view: ChartView, range: ChartRange) {
@@ -128,7 +128,7 @@ export class ConsumptionChartManager {
         datasets: [
           {
             type: 'bar',
-            label: view === 'week' ? 'Säckar per vecka' : 'Säckar per dag',
+            label: view === 'week' ? 'kg per vecka' : 'kg per dag',
             data: buckets.map(b => b.total),
             backgroundColor: BAR_COLOR,
             hoverBackgroundColor: '#1d4ed8', // blue-700
@@ -173,7 +173,7 @@ export class ConsumptionChartManager {
             grid: { color: GRID_COLOR },
             border: { display: false },
             ticks: { color: TEXT_COLOR, precision: 0 },
-            title: { display: true, text: 'Antal säckar', color: TEXT_COLOR },
+            title: { display: true, text: 'kg', color: TEXT_COLOR },
           },
         },
         plugins: {
@@ -195,8 +195,8 @@ export class ConsumptionChartManager {
                 const value = context.parsed.y;
                 if (value === null || value === undefined) return '';
                 return context.datasetIndex === 0
-                  ? formatSacks(value)
-                  : `${context.dataset.label}: ${formatSacks(value)}`;
+                  ? formatAmount(value)
+                  : `${context.dataset.label}: ${formatAmount(value)}`;
               },
             },
           },
