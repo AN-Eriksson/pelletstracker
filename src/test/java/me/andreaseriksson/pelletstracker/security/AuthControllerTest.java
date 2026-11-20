@@ -10,7 +10,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -27,10 +28,7 @@ class AuthControllerTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private UserDetailsService userDetailsService;
-
-    @Mock
-    private JwtUtil jwtUtil;
+    private TokenService tokenService;
 
     @InjectMocks
     private AuthController controller;
@@ -53,5 +51,19 @@ class AuthControllerTest {
                         .content("{\"username\":\"tester\",\"password\":\"wrong\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid username or password"));
+    }
+
+    @Test
+    void login_withValidCredentials_shouldReturnToken() throws Exception {
+        var user = User.withUsername("tester").password("hash").roles("USER").build();
+        when(authenticationManager.authenticate(any()))
+                .thenReturn(UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities()));
+        when(tokenService.generateToken(user)).thenReturn("signed.jwt.token");
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"tester\",\"password\":\"right\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("signed.jwt.token"));
     }
 }

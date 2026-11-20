@@ -4,8 +4,8 @@ import me.andreaseriksson.pelletstracker.dto.AuthRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,22 +14,20 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
-    private final JwtUtil jwtUtil;
+    private final TokenService tokenService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserDetailsService userDetailsService, JwtUtil jwtUtil) {
+    public AuthController(AuthenticationManager authenticationManager, TokenService tokenService) {
         this.authenticationManager = authenticationManager;
-        this.userDetailsService = userDetailsService;
-        this.jwtUtil = jwtUtil;
+        this.tokenService = tokenService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequest req) {
         var authToken = new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword());
-        authenticationManager.authenticate(authToken);
+        // Throws on bad credentials, which GlobalExceptionHandler turns into 401
+        Authentication authentication = authenticationManager.authenticate(authToken);
 
-        UserDetails user = userDetailsService.loadUserByUsername(req.getUsername());
-        String token = jwtUtil.generateToken(user);
-        return ResponseEntity.ok(Map.of("token", token));
+        UserDetails user = (UserDetails) authentication.getPrincipal();
+        return ResponseEntity.ok(Map.of("token", tokenService.generateToken(user)));
     }
 }
