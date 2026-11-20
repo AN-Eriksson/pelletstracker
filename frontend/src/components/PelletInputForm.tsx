@@ -82,10 +82,10 @@ export default function PelletInputForm({ onAddEntry }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6 bg-white rounded shadow">
+    <form onSubmit={handleSubmit} className="bg-white rounded shadow">
       <h2 className="px-4 py-3 text-lg font-semibold border-b border-gray-200">Ny inmatning</h2>
 
-      <div className="flex flex-wrap items-end gap-4 p-4">
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-end">
         <div>
           <label htmlFor={dateId} className="block text-sm font-medium text-gray-700 mb-1">
             Datum
@@ -98,7 +98,7 @@ export default function PelletInputForm({ onAddEntry }: Props) {
               max={todayIso()}
               onChange={e => setDate(e.target.value)}
               required
-              className="w-40 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="min-w-0 flex-1 min-h-11 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40 sm:flex-none"
             />
             <SegmentedControl
               label="Välj datum"
@@ -119,41 +119,45 @@ export default function PelletInputForm({ onAddEntry }: Props) {
               <span className="text-xs text-gray-500 tabular-nums">= {formatKg(amountKg)}</span>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <SegmentedControl
               label="Enhet"
               options={UNIT_OPTIONS}
               value={unit}
               onChange={handleUnitChange}
               size="md"
+              fullWidth
             />
-            {unit === 'sacks' && (
-              <SegmentedControl
-                label="Välj antal säckar"
-                options={QUICK_PICKS}
+            <div className="flex gap-2">
+              {unit === 'sacks' && (
+                <SegmentedControl
+                  label="Välj antal säckar"
+                  options={QUICK_PICKS}
+                  value={amount}
+                  onChange={setAmount}
+                  size="md"
+                  fullWidth
+                />
+              )}
+              <input
+                id={amountId}
+                type="number"
+                inputMode="numeric"
                 value={amount}
-                onChange={setAmount}
-                size="md"
+                onChange={e => setAmount(e.target.value)}
+                min="1"
+                step="1"
+                required
+                className={`${unit === 'kg' ? 'flex-1 sm:flex-none' : ''} w-20 min-h-11 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
-            )}
-            <input
-              id={amountId}
-              type="number"
-              inputMode="numeric"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              min="1"
-              step="1"
-              required
-              className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            </div>
           </div>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full sm:w-auto py-2 px-6 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+          className={`w-full min-h-12 sm:min-h-11 sm:w-auto py-2 px-6 rounded-md text-white font-medium ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
         >
           {loading ? 'Lägger till...' : 'Lägg till'}
         </button>

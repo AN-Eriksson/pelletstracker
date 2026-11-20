@@ -107,14 +107,18 @@ export default function App() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-white rounded-lg shadow-md">
+    // Mobile: cards straight on the page background. From sm: the whole app sits in one white card
+    <div className="max-w-4xl mx-auto p-4 pb-8 sm:my-6 sm:p-6 sm:bg-white sm:rounded-lg sm:shadow-md">
       <SiteHeader onLogout={isLoggedIn ? handleLogout : undefined} />
 
       {!isLoggedIn && <LoginForm onLogin={handleLogin} />}
 
       {isLoggedIn && (
-        <>
+        <main className="space-y-4 sm:space-y-6">
+          {/* Most used first: log sacks, then this week's numbers, the trend and the history */}
           <PelletInputForm onAddEntry={addEntry} />
+          <Statistics entries={entries} />
+          <ConsumptionChart entries={entries} />
           <RecentInputsTable entries={entries} onEdit={openEdit} />
 
           {entryToEdit && (
@@ -125,11 +129,7 @@ export default function App() {
               onDelete={handleDelete}
             />
           )}
-
-          <Statistics entries={entries} />
-
-          <ConsumptionChart entries={entries} />
-        </>
+        </main>
       )}
     </div>
   );

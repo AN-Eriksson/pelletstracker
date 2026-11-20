@@ -61,28 +61,30 @@ export default function Statistics({ entries = [] }: Props) {
   }, [entries]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-      <div className="p-4 bg-white rounded shadow">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="p-3 sm:p-4 bg-white rounded shadow">
         <div className="text-xs text-gray-500">Denna vecka</div>
-        <div className="text-2xl font-bold">{formatKg(stats.weekTotal)}</div>
+        <div className="text-xl sm:text-2xl font-bold tabular-nums">
+          {formatKg(stats.weekTotal)}
+        </div>
         <div className="text-xs text-gray-400">{formatAsSacks(stats.weekTotal)}</div>
       </div>
 
-      <div className="p-4 bg-white rounded shadow">
+      <div className="p-3 sm:p-4 bg-white rounded shadow">
         <div className="text-xs text-gray-500">Snitt per dag (30 dgr)</div>
-        <div className="text-2xl font-bold">{formatKg(stats.avg30)}</div>
+        <div className="text-xl sm:text-2xl font-bold tabular-nums">{formatKg(stats.avg30)}</div>
         <div className="text-xs text-gray-400">Totalt: {formatKg(stats.total30)}</div>
       </div>
 
-      <div className="p-4 bg-white rounded shadow">
+      <div className="p-3 sm:p-4 bg-white rounded shadow">
         <div className="text-xs text-gray-500">Snitt per dag (14 dgr)</div>
-        <div className="text-2xl font-bold">{formatKg(stats.avg14)}</div>
+        <div className="text-xl sm:text-2xl font-bold tabular-nums">{formatKg(stats.avg14)}</div>
         <div className="text-xs text-gray-400">Totalt: {formatKg(stats.total14)}</div>
       </div>
 
-      <div className="p-4 bg-white rounded shadow">
+      <div className="p-3 sm:p-4 bg-white rounded shadow">
         <div className="text-xs text-gray-500">Snitt per dag (7 / 3 dgr)</div>
-        <div className="text-2xl font-bold">
+        <div className="text-xl sm:text-2xl font-bold tabular-nums">
           {stats.avg7.toLocaleString('sv-SE', { maximumFractionDigits: 1 })} /{' '}
           {formatKg(stats.avg3)}
         </div>

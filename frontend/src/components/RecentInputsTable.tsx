@@ -39,7 +39,34 @@ export default function RecentInputsTable({ entries = [], onEdit }: Props) {
         <div className="px-4 py-6 text-sm text-gray-500">Inga poster ännu</div>
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Mobile: the whole row is the tap target */}
+          <ul className="divide-y divide-gray-200 sm:hidden">
+            {latestEntries.map(entry => (
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  onClick={() => onEdit(entry)}
+                  aria-label={`Redigera ${formatDate(entry.date)}`}
+                  className="flex w-full min-h-14 items-center justify-between gap-4 px-4 py-2 text-left active:bg-gray-100"
+                >
+                  <span>{formatDate(entry.date)}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-right tabular-nums">
+                      {formatKg(entry.amountKg)}
+                      <span className="block text-xs text-gray-400">
+                        {formatAsSacks(entry.amountKg)}
+                      </span>
+                    </span>
+                    <span aria-hidden="true" className="text-xl text-gray-400">
+                      ›
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          <div className="hidden overflow-x-auto sm:block">
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>

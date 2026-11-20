@@ -27,7 +27,7 @@ const LoginForm = ({ onLogin }: Props) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
+    <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
       <div>
         <label className="block text-sm font-medium mb-1" htmlFor="username">
           Användarnamn
@@ -36,10 +36,14 @@ const LoginForm = ({ onLogin }: Props) => {
           id="username"
           name="username"
           type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
           value={username}
           onChange={e => setUsername(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full min-h-11 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -51,10 +55,11 @@ const LoginForm = ({ onLogin }: Props) => {
           id="password"
           name="password"
           type="password"
+          autoComplete="current-password"
           required
           value={password}
           onChange={e => setPassword(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full min-h-11 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -63,7 +68,7 @@ const LoginForm = ({ onLogin }: Props) => {
       <button
         type="submit"
         disabled={loading}
-        className={`w-full py-2 px-4 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+        className={`w-full min-h-11 py-2 px-4 rounded-md text-white ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
       >
         {loading ? 'Loggar in…' : 'Logga in'}
       </button>

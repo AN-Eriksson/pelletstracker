@@ -6,18 +6,22 @@ interface Props {
 
 const SiteHeader = ({ onLogout }: Props) => {
   return (
-    <header className="flex items-center justify-between">
-      <img src="/pelletlogo.png" alt="logo" width="200" />
-      <h1 className="text-2xl font-bold mb-6">Logga och följ din pelletsförbrukning!</h1>
-      {onLogout && (
-        <button
-          type="button"
-          onClick={onLogout}
-          className="mb-6 py-2 px-4 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100"
-        >
-          Logga ut
-        </button>
-      )}
+    <header className="mb-4 sm:mb-6">
+      <div className="flex items-center justify-between gap-4">
+        <img src="/pelletlogo.png" alt="PelletTracker" className="h-12 w-auto sm:h-20" />
+        {onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="min-h-11 px-4 rounded-md border border-gray-300 bg-white text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Logga ut
+          </button>
+        )}
+      </div>
+      <h1 className="mt-2 text-lg font-semibold sm:mt-4 sm:text-2xl sm:font-bold">
+        Logga och följ din pelletsförbrukning!
+      </h1>
     </header>
   );
 };

@@ -1,1 +1,11 @@
 @import 'tailwindcss';
+
+@layer base {
+  body {
+    @apply bg-gray-100 text-gray-900 antialiased;
+    min-height: 100dvh;
+    /* viewport-fit=cover lets the page run under the notch/Dynamic Island and home indicator */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+}

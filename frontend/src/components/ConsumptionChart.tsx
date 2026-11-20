@@ -33,7 +33,7 @@ export default function ConsumptionChart({ entries = [] }: Props) {
   }, [entries, view, range]);
 
   return (
-    <div className="mt-6 bg-white rounded shadow">
+    <div className="bg-white rounded shadow">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-semibold">Förbrukning</h2>
         {hasEntries && (
