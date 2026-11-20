@@ -27,20 +27,19 @@ export default function App() {
   const [weatherSettings, setWeatherSettings] = useState<WeatherSettings | null>(null);
   const [temperatures, setTemperatures] = useState<DailyTemperature[]>([]);
   const [isStationPickerOpen, setIsStationPickerOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(authManager.isAuthenticated());
+  // null until the backend has answered whether the session cookie is still logged in
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     authManager.setOnAuthChange(setIsLoggedIn);
+    authManager.checkSession().then(setIsLoggedIn);
     return () => {
       authManager.setOnAuthChange(undefined);
     };
-  }, [setIsLoggedIn]);
+  }, []);
 
-  // create api client after registration (or useMemo)
-  const api = useMemo(
-    () => new ApiClient(authManager, { onUnauthorized: () => authManager.logOut() }),
-    [],
-  );
+  // A 401 means the session ended on the server (timed out or logged out elsewhere)
+  const api = useMemo(() => new ApiClient({ onUnauthorized: () => authManager.sessionExpired() }), []);
 
   const openEdit = (entry: Entry) => {
     setEntryToEdit(entry);
@@ -49,12 +48,10 @@ export default function App() {
     setEntryToEdit(null);
   };
 
+  // Data is loaded by the effect on isLoggedIn
   const handleLogin = async (username: string, password: string) => {
     try {
       await authManager.loginRequest(username, password);
-      setIsLoggedIn(true);
-
-      await Promise.all([loadAllEntries(), loadAllDeliveries(), loadWeather()]);
     } catch (err) {
       console.error('Login failed', err);
       throw err; // rethrow so LoginForm can show it
@@ -63,6 +60,9 @@ export default function App() {
 
   const handleLogout = () => {
     authManager.logOut();
+  };
+
+  const clearUserData = () => {
     setEntries([]);
     setEntryToEdit(null);
     setDeliveries([]);
@@ -146,11 +146,16 @@ export default function App() {
     await loadWeather();
   };
 
+  // Load everything once logged in, drop it again on logout or when the session ends
   useEffect(() => {
-    loadAllEntries();
-    loadAllDeliveries();
-    loadWeather();
-  }, [loadAllEntries, loadAllDeliveries, loadWeather]);
+    if (isLoggedIn) {
+      loadAllEntries();
+      loadAllDeliveries();
+      loadWeather();
+    } else if (isLoggedIn === false) {
+      clearUserData();
+    }
+  }, [isLoggedIn, loadAllEntries, loadAllDeliveries, loadWeather]);
 
   const addDelivery = async (date: string, amountKg: number) => {
     try {
@@ -201,7 +206,7 @@ export default function App() {
     <div className="max-w-4xl mx-auto p-4 pb-8 sm:my-6 sm:p-6 sm:bg-white sm:rounded-lg sm:shadow-md">
       <SiteHeader onLogout={isLoggedIn ? handleLogout : undefined} />
 
-      {!isLoggedIn && <LoginForm onLogin={handleLogin} />}
+      {isLoggedIn === false && <LoginForm onLogin={handleLogin} />}
 
       {isLoggedIn && (
         <main className="space-y-4 sm:space-y-6">

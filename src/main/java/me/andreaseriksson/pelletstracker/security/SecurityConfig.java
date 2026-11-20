@@ -1,18 +1,25 @@
 package me.andreaseriksson.pelletstracker.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.savedrequest.NullRequestCache;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,34 +34,44 @@ import static org.springframework.security.config.Customizer.withDefaults;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http,
+                                                   SecurityContextRepository securityContextRepository) throws Exception {
         http
                 .cors(withDefaults())
-                .csrf(csrf -> csrf.disable())
+                // The SPA reads the XSRF-TOKEN cookie and sends it back as the X-XSRF-TOKEN header on every
+                // POST/PUT/DELETE (lib/csrf.ts). Plain handler instead of the default XOR one, because the
+                // header carries the raw cookie value
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .authorizeHttpRequests(requests -> requests
+                        // Error pages (e.g. the 403 for a missing CSRF token) must not turn into 401
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()    // reach login
+                        .requestMatchers("/auth/me").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()     // static SPA assets
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Validates "Authorization: Bearer <token>" with the JwtDecoder from JwtConfig. A missing,
-                // invalid or expired token on a protected path gives 401 with a WWW-Authenticate header
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                // Login state lives in the session (Spring Session JDBC, cookie pelletstracker_session).
+                // AuthController saves it on login through the same repository
+                .securityContext(context -> context.securityContextRepository(securityContextRepository))
+                .logout(logout -> logout
+                        .logoutUrl("/auth/logout")  // POST only, since CSRF protection is on
+                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
+                // The SPA never needs "go back to the page you wanted after login", and the request cache
+                // would create a session (a database row) for every anonymous 401
+                .requestCache(cache -> cache.requestCache(new NullRequestCache()))
+                // Not logged in on a protected path: 401 for the SPA instead of a redirect or 403
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
         return http.build();
     }
 
-    // Authorities come from the "roles" claim as written by TokenService (e.g. ROLE_USER), not from "scope".
-    // The principal name is the subject, so authentication.getName() is still the username
-    private static JwtAuthenticationConverter jwtAuthenticationConverter() {
-        var authorities = new JwtGrantedAuthoritiesConverter();
-        authorities.setAuthoritiesClaimName(TokenService.ROLES_CLAIM);
-        authorities.setAuthorityPrefix("");
-
-        var converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(authorities);
-        return converter;
+    @Bean
+    SecurityContextRepository securityContextRepository(UserDetailsService userDetailsService) {
+        return new UsernameSessionSecurityContextRepository(userDetailsService);
     }
 
     @Bean

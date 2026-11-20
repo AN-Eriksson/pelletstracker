@@ -1,5 +1,10 @@
+import { csrfHeader } from './csrf';
+
+/**
+ * Login state lives in an HttpOnly session cookie that scripts cannot read, so the backend is asked
+ * (GET /auth/me) instead of checking a stored token.
+ */
 export class AuthManager {
-  private readonly TOKEN_KEY: string = 'pelletstracker_jwt';
   private onAuthChange?: (loggedIn: boolean) => void;
 
   setOnAuthChange(callback?: (loggedIn: boolean) => void) {
@@ -10,13 +15,26 @@ export class AuthManager {
     this.onAuthChange?.(value);
   }
 
+  /** Whether the session cookie belongs to a logged-in session. Also hands out the CSRF cookie. */
+  async checkSession(): Promise<boolean> {
+    try {
+      const response = await fetch('/auth/me', { headers: { Accept: 'application/json' } });
+      return response.ok;
+    } catch {
+      return false; // backend unreachable: show the login form
+    }
+  }
+
   async loginRequest(username: string, password: string): Promise<void> {
-    const credentials = { username, password };
+    // The login POST needs the CSRF cookie; it is set by any earlier response, normally /auth/me
+    if (Object.keys(csrfHeader()).length === 0) {
+      await this.checkSession();
+    }
 
     const response = await fetch('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(credentials),
+      headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+      body: JSON.stringify({ username, password }),
     });
 
     if (response.status === 401) {
@@ -27,57 +45,21 @@ export class AuthManager {
       throw new Error(`Inloggningen misslyckades (${response.status})`);
     }
 
-    const json = await response.json();
-
-    this.#saveToken(json.token);
     this.emitAuthChange(true);
   }
 
-  #saveToken(token: string) {
-    localStorage.setItem(this.TOKEN_KEY, token);
-  }
-
-  getToken() {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  logOut() {
-    localStorage.removeItem(this.TOKEN_KEY);
+  /** Ends the session on the server, then shows the login form. */
+  async logOut(): Promise<void> {
+    try {
+      await fetch('/auth/logout', { method: 'POST', headers: csrfHeader() });
+    } catch (err) {
+      console.error('Logout request failed', err);
+    }
     this.emitAuthChange(false);
   }
 
-  /**
-   * True when a token is stored and has not expired. An expired token is removed, so the app
-   * shows the login form at once instead of an empty view that fails on the first request.
-   */
-  isAuthenticated() {
-    const token = this.getToken();
-    if (token === null) {
-      return false;
-    }
-
-    if (this.#isExpired(token)) {
-      localStorage.removeItem(this.TOKEN_KEY);
-      return false;
-    }
-
-    return true;
-  }
-
-  // Reads `exp` (seconds) from the JWT payload. The signature is the backend's business;
-  // this is only to avoid using a token we already know it will reject.
-  #isExpired(token: string): boolean {
-    try {
-      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const { exp } = JSON.parse(atob(payload));
-      return typeof exp === 'number' && exp * 1000 <= Date.now();
-    } catch {
-      return true; // not a readable JWT
-    }
-  }
-
-  getAuthHeader() {
-    const token = this.getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
+  /** The backend already says the session is gone (401): only update the UI. */
+  sessionExpired() {
+    this.emitAuthChange(false);
   }
 }

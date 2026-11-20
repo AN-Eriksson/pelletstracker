@@ -1,20 +1,20 @@
+import { csrfHeader } from './csrf';
+
+// Session cookie and CSRF header instead of a bearer token: fetch sends the cookie by itself (same origin)
 export class ApiClient {
-  #authManager;
   #opts;
   #defaultHeaders;
 
-  constructor(authManager, opts) {
+  constructor(opts) {
     this.#defaultHeaders = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-    this.#authManager = authManager;
     this.#opts = opts;
   }
 
   async request(endpoint, { method, body = undefined }) {
-    const authHeader = this.#authManager.getAuthHeader();
-    const headers = { ...this.#defaultHeaders, ...authHeader };
+    const headers = method === 'GET' ? this.#defaultHeaders : { ...this.#defaultHeaders, ...csrfHeader() };
 
     const init = { method, headers };
 
@@ -24,7 +24,8 @@ export class ApiClient {
 
     const response = await fetch(endpoint, init);
 
-    if (response.status === 401 || response.status === 403) {
+    // Only 401 means logged out. 403 is a CSRF or permission problem and should not end the session
+    if (response.status === 401) {
       this.#handleUnauthorized();
     }
 

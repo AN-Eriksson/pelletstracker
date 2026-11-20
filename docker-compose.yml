@@ -14,8 +14,9 @@ services:
       APP_BOOTSTRAP_USERNAME: "${APP_BOOTSTRAP_USERNAME}"
       APP_BOOTSTRAP_PASSWORD: "${APP_BOOTSTRAP_PASSWORD}"
       APP_BOOTSTRAP_ROLE: "${APP_BOOTSTRAP_ROLE}"
-      JWT_SECRET: "${JWT_SECRET}"
-      JWT_EXP_MS: "${JWT_EXP_MS}"
+      # Optional: idle time before logout (default 30d), and false only for plain-http setups
+      SESSION_TIMEOUT: "${SESSION_TIMEOUT:-30d}"
+      SESSION_COOKIE_SECURE: "${SESSION_COOKIE_SECURE:-true}"
     depends_on:
       postgres:
         condition: service_healthy
