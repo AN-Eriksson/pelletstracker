@@ -31,29 +31,50 @@ export class AuthManager {
       await this.checkSession();
     }
 
-    const response = await fetch('/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...csrfHeader() },
-      body: JSON.stringify({ username, password }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...csrfHeader() },
+        body: JSON.stringify({ username, password }),
+      });
+    } catch {
+      // Otherwise the form would show the browser's English "Failed to fetch"
+      throw new Error('Servern gick inte att nå. Kontrollera anslutningen och försök igen.');
+    }
 
     if (response.status === 401) {
       throw new Error('Fel användarnamn eller lösenord');
     }
 
+    if (response.status === 403) {
+      throw new Error('Inloggningen nekades. Ladda om sidan och försök igen.');
+    }
+
     if (!response.ok) {
-      throw new Error(`Inloggningen misslyckades (${response.status})`);
+      throw new Error(`Inloggningen misslyckades (${response.status}). Försök igen.`);
     }
 
     this.emitAuthChange(true);
   }
 
-  /** Ends the session on the server, then shows the login form. */
+  /**
+   * Ends the session on the server, then shows the login form. Throws (with `status`, like ApiClient) if
+   * the server did not confirm it: showing the login form then would hide a session that is still valid.
+   */
   async logOut(): Promise<void> {
+    let response: Response;
     try {
-      await fetch('/auth/logout', { method: 'POST', headers: csrfHeader() });
-    } catch (err) {
-      console.error('Logout request failed', err);
+      response = await fetch('/auth/logout', { method: 'POST', headers: csrfHeader() });
+    } catch (cause) {
+      throw Object.assign(new Error('Logout request failed', { cause }), { status: 0 });
+    }
+
+    // 401: the session had already ended, which is what we wanted
+    if (!response.ok && response.status !== 401) {
+      throw Object.assign(new Error(`Logout failed: HTTP ${response.status}`), {
+        status: response.status,
+      });
     }
     this.emitAuthChange(false);
   }

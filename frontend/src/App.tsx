@@ -15,6 +15,8 @@ import { DailyTemperature, WeatherSettings, WeatherStation } from './types/Weath
 import { AuthManager } from './lib/AuthManager';
 import { ApiClient } from './lib/ApiClient';
 import LoginForm from './components/LoginForm';
+import Toast, { Notice } from './components/Toast';
+import { errorMessage, errorStatus } from './lib/errors';
 
 const authManager = new AuthManager();
 
@@ -38,8 +40,33 @@ export default function App() {
     };
   }, []);
 
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const dismissNotice = useCallback(() => setNotice(null), []);
+
   // A 401 means the session ended on the server (timed out or logged out elsewhere)
-  const api = useMemo(() => new ApiClient({ onUnauthorized: () => authManager.sessionExpired() }), []);
+  const api = useMemo(
+    () =>
+      new ApiClient({
+        onUnauthorized: () => {
+          authManager.sessionExpired();
+          setNotice({ kind: 'info', message: 'Du har loggats ut. Logga in igen.' });
+        },
+      }),
+    [],
+  );
+
+  // Logs the error and tells the user. 401 is skipped: onUnauthorized above already explains it
+  const showError = useCallback((err: unknown, action: string, retry?: () => void) => {
+    console.error(`Failed to ${action}`, err);
+    if (errorStatus(err) === 401) {
+      return;
+    }
+    setNotice({
+      kind: 'error',
+      message: errorMessage(err, action),
+      action: retry ? { label: 'Försök igen', onClick: retry } : undefined,
+    });
+  }, []);
 
   const openEdit = (entry: Entry) => {
     setEntryToEdit(entry);
@@ -52,14 +79,20 @@ export default function App() {
   const handleLogin = async (username: string, password: string) => {
     try {
       await authManager.loginRequest(username, password);
+      setNotice(null);
     } catch (err) {
       console.error('Login failed', err);
       throw err; // rethrow so LoginForm can show it
     }
   };
 
-  const handleLogout = () => {
-    authManager.logOut();
+  const handleLogout = async () => {
+    try {
+      await authManager.logOut();
+      setNotice(null);
+    } catch (err) {
+      showError(err, 'logga ut', handleLogout);
+    }
   };
 
   const clearUserData = () => {
@@ -73,72 +106,65 @@ export default function App() {
     setIsStationPickerOpen(false);
   };
 
-  const handleSave = async (entry: Entry) => {
-    try {
-      const id = entry.id;
-      const response = await api.put(`/api/pellets/${id}`, entry);
+  // fetch* throw, load* report the error themselves
+  const fetchEntries = useCallback(async () => {
+    const response = await api.get(`/api/pellets`);
+    setEntries(response.data);
+  }, [api]);
 
-      await loadAllEntries();
-    } catch (err) {
-      console.error(err);
-      if ((err as { status?: number }).status === 409) {
-        window.alert('Det finns redan en post för det datumet. Ändra den i stället.');
-      }
-    } finally {
-      closeEdit();
-    }
-  };
+  const fetchDeliveries = useCallback(async () => {
+    const response = await api.get(`/api/deliveries`);
+    setDeliveries(response.data);
+  }, [api]);
 
-  const handleDelete = async (entry: Entry) => {
-    try {
-      const id = entry.id;
-      await api.delete(`/api/pellets/${id}`);
-      await loadAllEntries();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      closeEdit();
-    }
-  };
+  const fetchWeather = useCallback(async () => {
+    const [settings, temps] = await Promise.all([
+      api.get(`/api/weather/settings`),
+      api.get(`/api/weather/temperatures`),
+    ]);
+    setWeatherSettings(settings.data);
+    setTemperatures(temps.data);
+  }, [api]);
 
   const loadAllEntries = useCallback(async () => {
     try {
-      const response = await api.get(`/api/pellets`);
-
-      setEntries(response.data);
+      await fetchEntries();
     } catch (err) {
-      console.error('Failed to load entries', err);
+      showError(err, 'hämta förbrukningen', loadAllEntries);
     }
-  }, []);
+  }, [fetchEntries, showError]);
 
   const loadAllDeliveries = useCallback(async () => {
     try {
-      const response = await api.get(`/api/deliveries`);
-
-      setDeliveries(response.data);
+      await fetchDeliveries();
     } catch (err) {
-      console.error('Failed to load deliveries', err);
+      showError(err, 'hämta lagret', loadAllDeliveries);
     }
-  }, []);
+  }, [fetchDeliveries, showError]);
 
   const loadWeather = useCallback(async () => {
     try {
-      const [settings, temps] = await Promise.all([
-        api.get(`/api/weather/settings`),
-        api.get(`/api/weather/temperatures`),
-      ]);
-
-      setWeatherSettings(settings.data);
-      setTemperatures(temps.data);
+      await fetchWeather();
     } catch (err) {
-      console.error('Failed to load weather', err);
+      showError(err, 'hämta väderdata', loadWeather);
     }
-  }, []);
+  }, [fetchWeather, showError]);
+
+  // One message (and one retry for everything) when the server is down, instead of three in a row
+  const loadEverything = useCallback(async () => {
+    const results = await Promise.allSettled([fetchEntries(), fetchDeliveries(), fetchWeather()]);
+    const failed = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failed) {
+      showError(failed.reason, 'hämta dina uppgifter', loadEverything);
+    }
+  }, [fetchEntries, fetchDeliveries, fetchWeather, showError]);
 
   const loadStations = useCallback(async (): Promise<WeatherStation[]> => {
     const response = await api.get(`/api/weather/stations`);
     return response.data;
-  }, []);
+  }, [api]);
 
   // Rethrows so StationPicker can tell the user (e.g. SMHI unreachable, 502)
   const selectStation = async (stationId: number) => {
@@ -149,61 +175,102 @@ export default function App() {
   // Load everything once logged in, drop it again on logout or when the session ends
   useEffect(() => {
     if (isLoggedIn) {
-      loadAllEntries();
-      loadAllDeliveries();
-      loadWeather();
+      loadEverything();
     } else if (isLoggedIn === false) {
       clearUserData();
     }
-  }, [isLoggedIn, loadAllEntries, loadAllDeliveries, loadWeather]);
+  }, [isLoggedIn, loadEverything]);
+
+  // The edit dialogs stay open on errors so nothing typed is lost. A 404 means the post was removed
+  // elsewhere: close and reload so the list no longer shows it
+  const handleSave = async (entry: Entry) => {
+    try {
+      await api.put(`/api/pellets/${entry.id}`, entry);
+      closeEdit();
+      await loadAllEntries();
+    } catch (err) {
+      if (errorStatus(err) === 409) {
+        console.error('Failed to save entry', err);
+        setNotice({
+          kind: 'error',
+          message: 'Det finns redan en förbrukning för det datumet. Ändra den i stället.',
+        });
+        return;
+      }
+      showError(err, 'spara förbrukningen');
+      if (errorStatus(err) === 404) {
+        closeEdit();
+        await loadAllEntries();
+      }
+    }
+  };
+
+  const handleDelete = async (entry: Entry) => {
+    try {
+      await api.delete(`/api/pellets/${entry.id}`);
+      closeEdit();
+      await loadAllEntries();
+    } catch (err) {
+      showError(err, 'ta bort förbrukningen');
+      if (errorStatus(err) === 404) {
+        closeEdit();
+        await loadAllEntries();
+      }
+    }
+  };
 
   const addDelivery = async (date: string, amountKg: number) => {
     try {
       await api.post('/api/deliveries', { date, amountKg });
-      await loadAllDeliveries();
     } catch (err) {
-      console.error(err);
+      showError(err, 'spara påfyllningen');
       throw err; // rethrow so InventorySheet keeps the input
     }
+    await loadAllDeliveries();
   };
 
   const handleSaveDelivery = async (delivery: Delivery) => {
     try {
       await api.put(`/api/deliveries/${delivery.id}`, delivery);
+      setDeliveryToEdit(null);
       await loadAllDeliveries();
     } catch (err) {
-      console.error(err);
-    } finally {
-      setDeliveryToEdit(null);
+      showError(err, 'spara påfyllningen');
+      if (errorStatus(err) === 404) {
+        setDeliveryToEdit(null);
+        await loadAllDeliveries();
+      }
     }
   };
 
   const handleDeleteDelivery = async (delivery: Delivery) => {
     try {
       await api.delete(`/api/deliveries/${delivery.id}`);
+      setDeliveryToEdit(null);
       await loadAllDeliveries();
     } catch (err) {
-      console.error(err);
-    } finally {
-      setDeliveryToEdit(null);
+      showError(err, 'ta bort påfyllningen');
+      if (errorStatus(err) === 404) {
+        setDeliveryToEdit(null);
+        await loadAllDeliveries();
+      }
     }
   };
 
   const addEntry = async (date: string, amountKg: number) => {
     try {
-      const payload = { date, amountKg };
-      const response = await api.post('/api/pellets', payload);
-
-      await loadAllEntries();
+      await api.post('/api/pellets', { date, amountKg });
     } catch (err) {
-      console.error(err);
+      showError(err, 'spara förbrukningen');
       throw err; // rethrow so PelletInputForm keeps the input
     }
+    await loadAllEntries();
   };
 
   return (
     // Mobile: cards straight on the page background. From sm: the whole app sits in one white card
     <div className="max-w-4xl mx-auto p-4 pb-8 sm:my-6 sm:p-6 sm:bg-white sm:rounded-lg sm:shadow-md">
+      <Toast notice={notice} onDismiss={dismissNotice} />
       <SiteHeader onLogout={isLoggedIn ? handleLogout : undefined} />
 
       {isLoggedIn === false && <LoginForm onLogin={handleLogin} />}

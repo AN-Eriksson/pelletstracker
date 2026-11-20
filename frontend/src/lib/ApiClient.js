@@ -14,7 +14,8 @@ export class ApiClient {
   }
 
   async request(endpoint, { method, body = undefined }) {
-    const headers = method === 'GET' ? this.#defaultHeaders : { ...this.#defaultHeaders, ...csrfHeader() };
+    const headers =
+      method === 'GET' ? this.#defaultHeaders : { ...this.#defaultHeaders, ...csrfHeader() };
 
     const init = { method, headers };
 
@@ -22,7 +23,15 @@ export class ApiClient {
       init.body = JSON.stringify(body);
     }
 
-    const response = await fetch(endpoint, init);
+    let response;
+    try {
+      response = await fetch(endpoint, init);
+    } catch (cause) {
+      // fetch only rejects when no response arrived at all (offline, server down, DNS)
+      const error = new Error(`Network error for ${endpoint}`, { cause });
+      error.status = 0;
+      throw error;
+    }
 
     // Only 401 means logged out. 403 is a CSRF or permission problem and should not end the session
     if (response.status === 401) {

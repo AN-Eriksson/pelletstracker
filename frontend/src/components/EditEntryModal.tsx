@@ -3,17 +3,18 @@ import { Entry } from '../types/Entry';
 import { formatAsSacks } from '../lib/units';
 
 interface Props {
-  entry: Entry,
-  onClose: () => void,
-  onSave: (entry: Entry) => Promise<void>,
-  onDelete: (entry: Entry) => Promise<void>,
-  title?: string
+  entry: Entry;
+  onClose: () => void;
+  onSave: (entry: Entry) => Promise<void>;
+  onDelete: (entry: Entry) => Promise<void>;
+  title?: string;
 }
 
 const EditEntryModal = ({ entry, onClose, onSave, onDelete, title = 'Redigera post' }: Props) => {
   const titleId = useId();
   const [date, setDate] = useState('');
   const [amountKg, setAmountKg] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const toInputDate = (date?: string | Date): string => {
     if (!date) {
@@ -41,23 +42,33 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete, title = 'Redigera po
     setAmountKg(String(entry.amountKg ?? ''));
   }, [entry]);
 
-  const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+  // The parent closes the dialog when the request succeeds and keeps it open (with a message) when it
+  // fails, so the input is not lost
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    onSave({
-      ...entry,
-      date,
-      amountKg: Number(amountKg) || 0,
-    });
-    onClose();
+    setBusy(true);
+    try {
+      await onSave({
+        ...entry,
+        date,
+        amountKg: Number(amountKg) || 0,
+      });
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!entry) return;
     if (!window.confirm('Ta bort posten?')) return;
 
-    onDelete(entry);
-    onClose();
+    setBusy(true);
+    try {
+      await onDelete(entry);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -111,9 +122,10 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete, title = 'Redigera po
           <div className="flex gap-2">
             <button
               type="submit"
-              className="flex-1 min-h-11 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 sm:flex-none"
+              disabled={busy}
+              className={`flex-1 min-h-11 text-white px-4 py-2 rounded sm:flex-none ${busy ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
-              Spara
+              {busy ? 'Sparar…' : 'Spara'}
             </button>
             <button
               type="button"
@@ -127,6 +139,7 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete, title = 'Redigera po
           <button
             type="button"
             onClick={handleDelete}
+            disabled={busy}
             className="min-h-11 text-red-600 border border-red-600 px-3 py-2 rounded hover:bg-red-50 sm:min-h-0 sm:py-1"
           >
             Ta bort
