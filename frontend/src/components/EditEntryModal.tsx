@@ -6,10 +6,11 @@ interface Props {
   entry: Entry,
   onClose: () => void,
   onSave: (entry: Entry) => Promise<void>,
-  onDelete: (entry: Entry) => Promise<void>
+  onDelete: (entry: Entry) => Promise<void>,
+  title?: string
 }
 
-const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
+const EditEntryModal = ({ entry, onClose, onSave, onDelete, title = 'Redigera post' }: Props) => {
   const titleId = useId();
   const [date, setDate] = useState('');
   const [amountKg, setAmountKg] = useState('');
@@ -73,7 +74,7 @@ const EditEntryModal = ({ entry, onClose, onSave, onDelete }: Props) => {
         className="relative z-10 w-full max-h-[90dvh] overflow-y-auto bg-white rounded-t-2xl shadow-lg p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md sm:mx-4 sm:rounded-md sm:pb-6"
       >
         <h3 id={titleId} className="text-lg font-semibold mb-4">
-          Redigera post
+          {title}
         </h3>
 
         <label className="block mb-3">

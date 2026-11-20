@@ -5,7 +5,9 @@ import ConsumptionChart from './components/ConsumptionChart';
 import Statistics from './components/Statistics';
 import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
+import InventoryCard from './components/InventoryCard';
 import { Entry } from './types/Entry';
+import { Delivery } from './types/Delivery';
 import { AuthManager } from './lib/AuthManager';
 import { ApiClient } from './lib/ApiClient';
 import LoginForm from './components/LoginForm';
@@ -15,6 +17,8 @@ const authManager = new AuthManager();
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [entryToEdit, setEntryToEdit] = useState<Entry | null>(null);
+  const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [deliveryToEdit, setDeliveryToEdit] = useState<Delivery | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(authManager.isAuthenticated());
 
   useEffect(() => {
@@ -42,7 +46,7 @@ export default function App() {
       await authManager.loginRequest(username, password);
       setIsLoggedIn(true);
 
-      await loadAllEntries();
+      await Promise.all([loadAllEntries(), loadAllDeliveries()]);
     } catch (err) {
       console.error('Login failed', err);
       throw err; // rethrow so LoginForm can show it
@@ -53,6 +57,8 @@ export default function App() {
     authManager.logOut();
     setEntries([]);
     setEntryToEdit(null);
+    setDeliveries([]);
+    setDeliveryToEdit(null);
   };
 
   const handleSave = async (entry: Entry) => {
@@ -93,9 +99,52 @@ export default function App() {
     }
   }, []);
 
+  const loadAllDeliveries = useCallback(async () => {
+    try {
+      const response = await api.get(`/api/deliveries`);
+
+      setDeliveries(response.data);
+    } catch (err) {
+      console.error('Failed to load deliveries', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadAllEntries();
-  }, [loadAllEntries]);
+    loadAllDeliveries();
+  }, [loadAllEntries, loadAllDeliveries]);
+
+  const addDelivery = async (date: string, amountKg: number) => {
+    try {
+      await api.post('/api/deliveries', { date, amountKg });
+      await loadAllDeliveries();
+    } catch (err) {
+      console.error(err);
+      throw err; // rethrow so PelletInputForm keeps the input
+    }
+  };
+
+  const handleSaveDelivery = async (delivery: Delivery) => {
+    try {
+      await api.put(`/api/deliveries/${delivery.id}`, delivery);
+      await loadAllDeliveries();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeliveryToEdit(null);
+    }
+  };
+
+  const handleDeleteDelivery = async (delivery: Delivery) => {
+    try {
+      await api.delete(`/api/deliveries/${delivery.id}`);
+      await loadAllDeliveries();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeliveryToEdit(null);
+    }
+  };
 
   const addEntry = async (date: string, amountKg: number) => {
     try {
@@ -118,8 +167,13 @@ export default function App() {
 
       {isLoggedIn && (
         <main className="space-y-4 sm:space-y-6">
-          {/* Most used first: log sacks, then this week's numbers, the trend and the history */}
-          <PelletInputForm onAddEntry={addEntry} />
+          {/* Most used first: log sacks, then the stock, this week's numbers, the trend and the history */}
+          <PelletInputForm onAddEntry={addEntry} onAddDelivery={addDelivery} />
+          <InventoryCard
+            entries={entries}
+            deliveries={deliveries}
+            onEditDelivery={setDeliveryToEdit}
+          />
           <Statistics entries={entries} />
           <ConsumptionChart entries={entries} />
           <RecentInputsTable entries={entries} onEdit={openEdit} />
@@ -130,6 +184,16 @@ export default function App() {
               onClose={closeEdit}
               onSave={handleSave}
               onDelete={handleDelete}
+            />
+          )}
+
+          {deliveryToEdit && (
+            <EditEntryModal
+              entry={deliveryToEdit}
+              title="Redigera påfyllning"
+              onClose={() => setDeliveryToEdit(null)}
+              onSave={handleSaveDelivery}
+              onDelete={handleDeleteDelivery}
             />
           )}
         </main>

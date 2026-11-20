@@ -5,7 +5,15 @@ import { Unit, formatKg, sacksToKg } from '../lib/units';
 
 interface Props {
   onAddEntry: (date: string, amountKg: number) => Promise<void>;
+  onAddDelivery: (date: string, amountKg: number) => Promise<void>;
 }
+
+type Kind = 'consumption' | 'delivery';
+
+const KIND_OPTIONS: Option<Kind>[] = [
+  { value: 'consumption', label: 'Förbrukning' },
+  { value: 'delivery', label: 'Påfyllning' },
+];
 
 const todayIso = () => stripTimeFromDate(new Date());
 
@@ -22,10 +30,11 @@ const UNIT_OPTIONS: Option<Unit>[] = [
   { value: 'kg', label: 'kg' },
 ];
 
-export default function PelletInputForm({ onAddEntry }: Props) {
+export default function PelletInputForm({ onAddEntry, onAddDelivery }: Props) {
   const dateId = useId();
   const amountId = useId();
   const [date, setDate] = useState(todayIso);
+  const [kind, setKind] = useState<Kind>('consumption');
   const [unit, setUnit] = useState<Unit>('sacks');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,7 +81,12 @@ export default function PelletInputForm({ onAddEntry }: Props) {
 
     try {
       setLoading(true);
-      await onAddEntry(date, amountKg);
+      if (kind === 'delivery') {
+        await onAddDelivery(date, amountKg);
+        setKind('consumption'); // deliveries are rare, so the next entry is most likely consumption
+      } else {
+        await onAddEntry(date, amountKg);
+      }
       setAmount('');
     } catch (err) {
       console.error(err);
@@ -84,6 +98,17 @@ export default function PelletInputForm({ onAddEntry }: Props) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded shadow">
       <h2 className="px-4 py-3 text-lg font-semibold border-b border-gray-200">Ny inmatning</h2>
+
+      <div className="px-4 pt-4">
+        <SegmentedControl
+          label="Typ av inmatning"
+          options={KIND_OPTIONS}
+          value={kind}
+          onChange={setKind}
+          size="md"
+          fullWidth
+        />
+      </div>
 
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:flex-wrap sm:items-end">
         <div>
@@ -129,7 +154,8 @@ export default function PelletInputForm({ onAddEntry }: Props) {
               fullWidth
             />
             <div className="flex gap-2">
-              {unit === 'sacks' && (
+              {/* Quick picks fit daily consumption; deliveries are typed in */}
+              {kind === 'consumption' && unit === 'sacks' && (
                 <SegmentedControl
                   label="Välj antal säckar"
                   options={QUICK_PICKS}
@@ -148,7 +174,7 @@ export default function PelletInputForm({ onAddEntry }: Props) {
                 min="1"
                 step="1"
                 required
-                className={`${unit === 'kg' ? 'flex-1 sm:flex-none' : ''} w-20 min-h-11 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className={`${kind === 'delivery' || unit === 'kg' ? 'flex-1 sm:flex-none' : ''} w-20 min-h-11 px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
             </div>
           </div>
@@ -159,7 +185,7 @@ export default function PelletInputForm({ onAddEntry }: Props) {
           disabled={loading}
           className={`w-full min-h-12 sm:min-h-11 sm:w-auto py-2 px-6 rounded-md text-white font-medium ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
         >
-          {loading ? 'Lägger till...' : 'Lägg till'}
+          {loading ? 'Lägger till...' : kind === 'delivery' ? 'Lägg till påfyllning' : 'Lägg till'}
         </button>
       </div>
     </form>
