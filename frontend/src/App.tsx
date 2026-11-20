@@ -63,6 +63,9 @@ export default function App() {
       await loadAllEntries();
     } catch (err) {
       console.error(err);
+      if ((err as { status?: number }).status === 409) {
+        window.alert('Det finns redan en post för det datumet. Ändra den i stället.');
+      }
     } finally {
       closeEdit();
     }

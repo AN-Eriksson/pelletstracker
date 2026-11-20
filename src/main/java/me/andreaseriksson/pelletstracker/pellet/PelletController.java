@@ -2,6 +2,7 @@ package me.andreaseriksson.pelletstracker.pellet;
 
 import jakarta.validation.Valid;
 import me.andreaseriksson.pelletstracker.dto.CreatePelletEntryDto;
+import me.andreaseriksson.pelletstracker.exception.ConflictException;
 import me.andreaseriksson.pelletstracker.exception.ResourceNotFoundException;
 import me.andreaseriksson.pelletstracker.user.AppUser;
 import me.andreaseriksson.pelletstracker.user.AppUserRepository;
@@ -131,6 +132,7 @@ public class PelletController {
      * @param id the ID of the pellet to update
      * @param authentication the current authenticated user
      * @throws ResourceNotFoundException if no pellet with the given ID is found
+     * @throws ConflictException if the user already has another entry on the new date
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
@@ -140,6 +142,13 @@ public class PelletController {
         AppUser currentUser = getCurrentUser(authentication);
         PelletEntry existing = pelletRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("Pellet not found with id " + id));
+
+        // One entry per user and date (unique constraint); report it instead of failing on save
+        pelletRepository.findByDateAndUser(dto.getDate(), currentUser)
+                .filter(other -> !other.getId().equals(existing.getId()))
+                .ifPresent(other -> {
+                    throw new ConflictException("Pellet entry already exists for date " + dto.getDate());
+                });
 
         existing.setDate(dto.getDate());
         existing.setAmountKg(dto.getAmountKg());

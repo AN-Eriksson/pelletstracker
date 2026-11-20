@@ -46,8 +46,34 @@ export class AuthManager {
     this.emitAuthChange(false);
   }
 
+  /**
+   * True when a token is stored and has not expired. An expired token is removed, so the app
+   * shows the login form at once instead of an empty view that fails on the first request.
+   */
   isAuthenticated() {
-    return this.getToken() !== null;
+    const token = this.getToken();
+    if (token === null) {
+      return false;
+    }
+
+    if (this.#isExpired(token)) {
+      localStorage.removeItem(this.TOKEN_KEY);
+      return false;
+    }
+
+    return true;
+  }
+
+  // Reads `exp` (seconds) from the JWT payload. The signature is the backend's business;
+  // this is only to avoid using a token we already know it will reject.
+  #isExpired(token: string): boolean {
+    try {
+      const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const { exp } = JSON.parse(atob(payload));
+      return typeof exp === 'number' && exp * 1000 <= Date.now();
+    } catch {
+      return true; // not a readable JWT
+    }
   }
 
   getAuthHeader() {

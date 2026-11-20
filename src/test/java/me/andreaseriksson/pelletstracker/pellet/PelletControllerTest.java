@@ -1,6 +1,7 @@
 package me.andreaseriksson.pelletstracker.pellet;
 
 import me.andreaseriksson.pelletstracker.dto.CreatePelletEntryDto;
+import me.andreaseriksson.pelletstracker.exception.ConflictException;
 import me.andreaseriksson.pelletstracker.user.AppUser;
 import me.andreaseriksson.pelletstracker.user.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -70,5 +72,38 @@ class PelletControllerTest {
         assertEquals("success", result.getStatus());
         assertEquals("Pellet entry updated", result.getMessage());
         verify(pelletRepository, times(1)).save(existing);
+    }
+
+    @Test
+    void update_toDateOfAnotherEntry_shouldThrowConflict() {
+        PelletEntry editing = entryWithId(1L, LocalDate.now().minusDays(1), 32);
+        PelletEntry other = entryWithId(2L, testDto.getDate(), 16);
+        when(authentication.getName()).thenReturn("testuser");
+        when(appUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(pelletRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(editing));
+        when(pelletRepository.findByDateAndUser(testDto.getDate(), testUser)).thenReturn(Optional.of(other));
+
+        assertThrows(ConflictException.class, () -> controller.update(testDto, 1L, authentication));
+        verify(pelletRepository, never()).save(any(PelletEntry.class));
+    }
+
+    @Test
+    void update_keepingItsOwnDate_shouldSave() {
+        PelletEntry editing = entryWithId(1L, testDto.getDate(), 32);
+        when(authentication.getName()).thenReturn("testuser");
+        when(appUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(pelletRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(editing));
+        when(pelletRepository.findByDateAndUser(testDto.getDate(), testUser)).thenReturn(Optional.of(editing));
+
+        controller.update(testDto, 1L, authentication);
+
+        assertEquals(80, editing.getAmountKg());
+        verify(pelletRepository, times(1)).save(editing);
+    }
+
+    private static PelletEntry entryWithId(Long id, LocalDate date, int amountKg) {
+        PelletEntry entry = new PelletEntry(date, amountKg);
+        ReflectionTestUtils.setField(entry, "id", id);
+        return entry;
     }
 }

@@ -92,6 +92,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
+    @ExceptionHandler(ConflictException.class)
+    protected ResponseEntity<ApiError> handleConflict(ConflictException ex, WebRequest request) {
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
+        logger.info("Conflict at {}: {}", path, ex.getMessage());
+
+        ApiError body = new ApiError(
+                OffsetDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                path,
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     protected ResponseEntity<ApiError> handleAuthentication(AuthenticationException ex, WebRequest request) {
         String path = ((ServletWebRequest) request).getRequest().getRequestURI();

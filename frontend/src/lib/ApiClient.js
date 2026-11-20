@@ -29,7 +29,9 @@ export class ApiClient {
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const error = new Error(`HTTP ${response.status}`);
+      error.status = response.status; // lets callers react to e.g. 409 Conflict
+      throw error;
     }
 
     const text = await response.text().catch(() => '');
@@ -58,6 +60,6 @@ export class ApiClient {
   }
 
   #handleUnauthorized() {
-    this.opts.onUnauthorized();
+    this.#opts?.onUnauthorized?.();
   }
 }
