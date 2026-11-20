@@ -7,8 +7,11 @@ import EditEntryModal from './components/EditEntryModal';
 import SiteHeader from './components/SiteHeader';
 import InventoryCard from './components/InventoryCard';
 import InventorySheet from './components/InventorySheet';
+import WeatherCard from './components/WeatherCard';
+import StationPicker from './components/StationPicker';
 import { Entry } from './types/Entry';
 import { Delivery } from './types/Delivery';
+import { DailyTemperature, WeatherSettings, WeatherStation } from './types/Weather';
 import { AuthManager } from './lib/AuthManager';
 import { ApiClient } from './lib/ApiClient';
 import LoginForm from './components/LoginForm';
@@ -21,6 +24,9 @@ export default function App() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [deliveryToEdit, setDeliveryToEdit] = useState<Delivery | null>(null);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [weatherSettings, setWeatherSettings] = useState<WeatherSettings | null>(null);
+  const [temperatures, setTemperatures] = useState<DailyTemperature[]>([]);
+  const [isStationPickerOpen, setIsStationPickerOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<Boolean>(authManager.isAuthenticated());
 
   useEffect(() => {
@@ -48,7 +54,7 @@ export default function App() {
       await authManager.loginRequest(username, password);
       setIsLoggedIn(true);
 
-      await Promise.all([loadAllEntries(), loadAllDeliveries()]);
+      await Promise.all([loadAllEntries(), loadAllDeliveries(), loadWeather()]);
     } catch (err) {
       console.error('Login failed', err);
       throw err; // rethrow so LoginForm can show it
@@ -62,6 +68,9 @@ export default function App() {
     setDeliveries([]);
     setDeliveryToEdit(null);
     setIsInventoryOpen(false);
+    setWeatherSettings(null);
+    setTemperatures([]);
+    setIsStationPickerOpen(false);
   };
 
   const handleSave = async (entry: Entry) => {
@@ -112,10 +121,36 @@ export default function App() {
     }
   }, []);
 
+  const loadWeather = useCallback(async () => {
+    try {
+      const [settings, temps] = await Promise.all([
+        api.get(`/api/weather/settings`),
+        api.get(`/api/weather/temperatures`),
+      ]);
+
+      setWeatherSettings(settings.data);
+      setTemperatures(temps.data);
+    } catch (err) {
+      console.error('Failed to load weather', err);
+    }
+  }, []);
+
+  const loadStations = useCallback(async (): Promise<WeatherStation[]> => {
+    const response = await api.get(`/api/weather/stations`);
+    return response.data;
+  }, []);
+
+  // Rethrows so StationPicker can tell the user (e.g. SMHI unreachable, 502)
+  const selectStation = async (stationId: number) => {
+    await api.put('/api/weather/station', { stationId });
+    await loadWeather();
+  };
+
   useEffect(() => {
     loadAllEntries();
     loadAllDeliveries();
-  }, [loadAllEntries, loadAllDeliveries]);
+    loadWeather();
+  }, [loadAllEntries, loadAllDeliveries, loadWeather]);
 
   const addDelivery = async (date: string, amountKg: number) => {
     try {
@@ -170,7 +205,7 @@ export default function App() {
 
       {isLoggedIn && (
         <main className="space-y-4 sm:space-y-6">
-          {/* Most used first: log sacks, then the stock, this week's numbers, the trend and the history */}
+          {/* Most used first: log sacks, then the stock, this week's numbers, weather, the trend and the history */}
           <PelletInputForm onAddEntry={addEntry} />
           <InventoryCard
             entries={entries}
@@ -178,7 +213,13 @@ export default function App() {
             onEdit={() => setIsInventoryOpen(true)}
           />
           <Statistics entries={entries} />
-          <ConsumptionChart entries={entries} />
+          <WeatherCard
+            entries={entries}
+            temperatures={temperatures}
+            settings={weatherSettings}
+            onPickStation={() => setIsStationPickerOpen(true)}
+          />
+          <ConsumptionChart entries={entries} temperatures={temperatures} />
           <RecentInputsTable entries={entries} onEdit={openEdit} />
 
           {entryToEdit && (
@@ -187,6 +228,15 @@ export default function App() {
               onClose={closeEdit}
               onSave={handleSave}
               onDelete={handleDelete}
+            />
+          )}
+
+          {isStationPickerOpen && (
+            <StationPicker
+              currentStationId={weatherSettings?.stationId ?? null}
+              loadStations={loadStations}
+              onSelect={selectStation}
+              onClose={() => setIsStationPickerOpen(false)}
             />
           )}
 

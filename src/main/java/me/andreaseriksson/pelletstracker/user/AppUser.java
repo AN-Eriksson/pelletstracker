@@ -35,6 +35,12 @@ public class AppUser {
     @Column(nullable = false, length = 50)
     private String role;
 
+    /**
+     * SMHI weather station used for the temperature comparison, or null until the user picks one.
+     */
+    @Column(name = "weather_station_id")
+    private Integer weatherStationId;
+
     public Long getId() {
         return id;
     }
@@ -61,5 +67,13 @@ public class AppUser {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Integer getWeatherStationId() {
+        return weatherStationId;
+    }
+
+    public void setWeatherStationId(Integer weatherStationId) {
+        this.weatherStationId = weatherStationId;
     }
 }

@@ -2,6 +2,7 @@ import Chart from 'chart.js/auto';
 import type { TooltipItem } from 'chart.js';
 import { fillMissingDates, getIsoWeek, parseLocalDate, startOfWeek } from '../utilities/dateUtils';
 import { Entry } from '../types/Entry';
+import { DailyTemperature } from '../types/Weather';
 import { formatAsSacks, formatKg } from './units';
 
 export type ChartView = 'week' | 'day';
@@ -11,10 +12,14 @@ type Bucket = {
   start: Date; // the day, or the Monday of the week
   total: number;
   average: number | null; // rolling average, null until the window is full
+  meanC: number | null; // mean outdoor temperature over the days in the bucket that have one
+  tempSum: number;
+  tempDays: number;
 };
 
 const BAR_COLOR = '#2563eb'; // Tailwind blue-600, same as the app's buttons
 const TREND_COLOR = '#d97706'; // amber-600
+const TEMP_COLOR = '#0891b2'; // cyan-600
 const TEXT_COLOR = '#6b7280'; // gray-500
 const GRID_COLOR = '#e5e7eb'; // gray-200
 
@@ -46,22 +51,43 @@ const rangeCutoff = (range: ChartRange): Date | null => {
  * with a rolling average over the previous buckets. The average is computed over the full
  * history before the range is applied, so it is correct at the left edge of the chart too.
  */
-export const buildBuckets = (entries: Entry[], view: ChartView, range: ChartRange): Bucket[] => {
+export const buildBuckets = (
+  entries: Entry[],
+  view: ChartView,
+  range: ChartRange,
+  temperatures: DailyTemperature[] = [],
+): Bucket[] => {
   const days = fillMissingDates(entries);
   if (!days || days.length === 0) return [];
 
-  let buckets: Bucket[] = days.map(e => ({
-    start: parseLocalDate(e.date),
-    total: Number(e.amountKg || 0),
-    average: null,
-  }));
+  const tempByDate = new Map(temperatures.map(t => [t.date, t.meanC]));
+  let buckets: Bucket[] = days.map(e => {
+    const meanC = tempByDate.get(e.date);
+    return {
+      start: parseLocalDate(e.date),
+      total: Number(e.amountKg || 0),
+      average: null,
+      meanC: null,
+      tempSum: meanC ?? 0,
+      tempDays: meanC === undefined ? 0 : 1,
+    };
+  });
 
   if (view === 'week') {
     const weeks = new Map<number, Bucket>();
     for (const day of buckets) {
       const monday = startOfWeek(day.start);
-      const week = weeks.get(monday.getTime()) ?? { start: monday, total: 0, average: null };
+      const week = weeks.get(monday.getTime()) ?? {
+        start: monday,
+        total: 0,
+        average: null,
+        meanC: null,
+        tempSum: 0,
+        tempDays: 0,
+      };
       week.total += day.total;
+      week.tempSum += day.tempSum;
+      week.tempDays += day.tempDays;
       weeks.set(monday.getTime(), week);
     }
     buckets = [...weeks.values()];
@@ -69,6 +95,7 @@ export const buildBuckets = (entries: Entry[], view: ChartView, range: ChartRang
 
   const window = AVERAGE_WINDOW[view];
   buckets.forEach((bucket, i) => {
+    bucket.meanC = bucket.tempDays > 0 ? bucket.tempSum / bucket.tempDays : null;
     if (i >= window - 1) {
       const sum = buckets.slice(i - window + 1, i + 1).reduce((acc, b) => acc + b.total, 0);
       bucket.average = sum / window;
@@ -92,13 +119,20 @@ export class ConsumptionChartManager {
   }
 
   /**
-   * Renders kg per day or per week as bars, with a rolling average as a line.
+   * Renders kg per day or per week as bars, with a rolling average as a line and, when there are
+   * temperatures, the mean outdoor temperature on a second axis.
    * Replaces any chart previously rendered on the canvas.
    */
-  render(entries: Entry[], view: ChartView, range: ChartRange) {
+  render(
+    entries: Entry[],
+    view: ChartView,
+    range: ChartRange,
+    temperatures: DailyTemperature[] = [],
+  ) {
     this.destroy();
 
-    const buckets = buildBuckets(entries, view, range);
+    const buckets = buildBuckets(entries, view, range, temperatures);
+    const hasTemperature = buckets.some(b => b.meanC !== null);
     const currentWeek = startOfWeek(new Date()).getTime();
     const window = AVERAGE_WINDOW[view];
 
@@ -153,6 +187,27 @@ export class ConsumptionChartManager {
             pointHoverBorderWidth: 2,
             order: 1,
           },
+          ...(hasTemperature
+            ? [
+                {
+                  type: 'line' as const,
+                  label: 'Utetemp',
+                  data: buckets.map(b => b.meanC),
+                  yAxisID: 'temp',
+                  borderColor: TEMP_COLOR,
+                  backgroundColor: TEMP_COLOR,
+                  borderWidth: 2,
+                  borderDash: [4, 4],
+                  tension: 0.3,
+                  pointRadius: 0,
+                  pointHoverRadius: 5,
+                  pointHoverBorderColor: '#ffffff',
+                  pointHoverBorderWidth: 2,
+                  spanGaps: true,
+                  order: 0,
+                },
+              ]
+            : []),
         ],
       },
       options: {
@@ -175,6 +230,14 @@ export class ConsumptionChartManager {
             ticks: { color: TEXT_COLOR, precision: 0 },
             title: { display: true, text: 'kg', color: TEXT_COLOR },
           },
+          temp: {
+            display: hasTemperature,
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            border: { display: false },
+            ticks: { color: TEMP_COLOR, precision: 0 },
+            title: { display: true, text: '°C', color: TEMP_COLOR },
+          },
         },
         plugins: {
           legend: {
@@ -194,6 +257,9 @@ export class ConsumptionChartManager {
               label: (context: TooltipItem<'bar'>) => {
                 const value = context.parsed.y;
                 if (value === null || value === undefined) return '';
+                if (context.dataset.yAxisID === 'temp') {
+                  return `${context.dataset.label}: ${value.toLocaleString('sv-SE', { maximumFractionDigits: 1 })} °C`;
+                }
                 return context.datasetIndex === 0
                   ? formatAmount(value)
                   : `${context.dataset.label}: ${formatAmount(value)}`;

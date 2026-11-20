@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -108,6 +109,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(RestClientException.class)
+    protected ResponseEntity<ApiError> handleUpstream(RestClientException ex, WebRequest request) {
+        String path = ((ServletWebRequest) request).getRequest().getRequestURI();
+
+        logger.warn("External service failed at {}: {}", path, ex.getMessage());
+
+        // An external service (SMHI) failed, not this app
+        ApiError body = new ApiError(
+                OffsetDateTime.now(),
+                HttpStatus.BAD_GATEWAY.value(),
+                HttpStatus.BAD_GATEWAY.getReasonPhrase(),
+                "Could not fetch data from an external service",
+                path,
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
     }
 
     @ExceptionHandler(AuthenticationException.class)

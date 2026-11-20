@@ -50,4 +50,12 @@ public interface PelletRepository extends JpaRepository<PelletEntry, Long> {
      * @return a list of pellet entries within the date range for that user
      */
     List<PelletEntry> findByDateBetweenAndUser(LocalDate startDate, LocalDate endDate, AppUser user);
+
+    /**
+     * Finds the user's earliest pellet entry, which decides how far back temperatures are needed.
+     *
+     * @param user the owning user
+     * @return the earliest entry, or empty if the user has none
+     */
+    Optional<PelletEntry> findFirstByUserOrderByDateAsc(AppUser user);
 }

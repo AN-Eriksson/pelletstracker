@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChartRange, ChartView, ConsumptionChartManager } from '../lib/ConsumptionChartManager';
 import { Entry } from '../types/Entry';
+import { DailyTemperature } from '../types/Weather';
 import SegmentedControl, { Option } from './SegmentedControl';
 
 type Props = {
   entries?: Entry[];
+  temperatures?: DailyTemperature[];
 };
 
 const VIEW_OPTIONS: Option<ChartView>[] = [
@@ -18,7 +20,7 @@ const RANGE_OPTIONS: Option<ChartRange>[] = [
   { value: 'all', label: 'Allt' },
 ];
 
-export default function ConsumptionChart({ entries = [] }: Props) {
+export default function ConsumptionChart({ entries = [], temperatures = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<ChartView>('week');
   const [range, setRange] = useState<ChartRange>('3m');
@@ -28,9 +30,9 @@ export default function ConsumptionChart({ entries = [] }: Props) {
     if (!canvasRef.current) return;
 
     const manager = new ConsumptionChartManager(canvasRef.current);
-    manager.render(entries, view, range);
+    manager.render(entries, view, range, temperatures);
     return () => manager.destroy();
-  }, [entries, view, range]);
+  }, [entries, view, range, temperatures]);
 
   return (
     <div className="bg-white rounded shadow">
