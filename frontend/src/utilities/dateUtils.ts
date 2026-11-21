@@ -34,6 +34,23 @@ export const startOfWeek = (dateInput: string | Date): Date => {
 };
 
 /**
+ * Return the first day (00:00) of the month the date falls in
+ */
+export const startOfMonth = (dateInput: string | Date): Date => {
+  const d = parseLocalDate(dateInput);
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+};
+
+/**
+ * The year an ISO week belongs to: the year of its Thursday, so 29 Dec 2025 is in week 1 of 2026
+ */
+export const getIsoWeekYear = (dateInput: string | Date): number => {
+  const d = startOfWeek(dateInput);
+  d.setDate(d.getDate() + 3);
+  return d.getFullYear();
+};
+
+/**
  * ISO 8601 week number (weeks start on Monday, week 1 contains the first Thursday)
  */
 export const getIsoWeek = (dateInput: string | Date): number => {

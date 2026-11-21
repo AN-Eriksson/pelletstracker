@@ -1,15 +1,22 @@
 import Chart from 'chart.js/auto';
 import type { TooltipItem } from 'chart.js';
-import { fillMissingDates, getIsoWeek, parseLocalDate, startOfWeek } from '../utilities/dateUtils';
+import {
+  fillMissingDates,
+  getIsoWeek,
+  getIsoWeekYear,
+  parseLocalDate,
+  startOfMonth,
+  startOfWeek,
+} from '../utilities/dateUtils';
 import { Entry } from '../types/Entry';
 import { DailyTemperature } from '../types/Weather';
 import { formatAsSacks, formatKg } from './units';
 
-export type ChartView = 'week' | 'day';
-export type ChartRange = '30d' | '3m' | 'all';
+export type ChartView = 'day' | 'week' | 'month';
+export type ChartRange = '30d' | '3m' | '1y' | 'all';
 
 type Bucket = {
-  start: Date; // the day, or the Monday of the week
+  start: Date; // the day, the Monday of the week or the first of the month
   total: number;
   average: number | null; // rolling average, null until the window is full
   meanC: number | null; // mean outdoor temperature over the days in the bucket that have one
@@ -23,8 +30,29 @@ const TEMP_COLOR = '#0891b2'; // cyan-600
 const TEXT_COLOR = '#6b7280'; // gray-500
 const GRID_COLOR = '#e5e7eb'; // gray-200
 
-// Rolling average window: 7 days in the daily view, 4 weeks in the weekly view
-const AVERAGE_WINDOW: Record<ChartView, number> = { day: 7, week: 4 };
+// Rolling average window: 7 days, 4 weeks or 3 months
+const AVERAGE_WINDOW: Record<ChartView, number> = { day: 7, week: 4, month: 3 };
+const AVERAGE_LABEL: Record<ChartView, string> = {
+  day: 'Snitt 7 dagar',
+  week: 'Snitt 4 veckor',
+  month: 'Snitt 3 mån',
+};
+const BAR_LABEL: Record<ChartView, string> = {
+  day: 'kg per dag',
+  week: 'kg per vecka',
+  month: 'kg per månad',
+};
+
+// Roughly the width of one x-axis label ("v. 52", "13 nov") plus some space
+const TICK_SPACING_PX = 56;
+
+// Label every n:th bar, with n from these steps (week, two weeks, quarter, year...) so the labels
+// fall on the same day, week or month of the period instead of drifting
+const TICK_STEPS: Record<ChartView, number[]> = {
+  day: [1, 2, 7, 14, 28, 91, 182, 364],
+  week: [1, 2, 4, 8, 13, 26, 52, 104],
+  month: [1, 2, 3, 6, 12, 24, 48],
+};
 
 const formatAmount = (kg: number) => {
   if (kg === 0) return 'Ingen förbrukning';
@@ -40,14 +68,27 @@ const rangeCutoff = (range: ChartRange): Date | null => {
   cutoff.setHours(0, 0, 0, 0);
   if (range === '30d') {
     cutoff.setDate(cutoff.getDate() - 29);
-  } else {
+  } else if (range === '3m') {
     cutoff.setMonth(cutoff.getMonth() - 3);
+  } else {
+    cutoff.setFullYear(cutoff.getFullYear() - 1);
   }
   return cutoff;
 };
 
+// The start of the week or month a day belongs to; days are their own bucket
+const bucketStart = (day: Date, view: ChartView): Date => {
+  if (view === 'week') return startOfWeek(day);
+  if (view === 'month') return startOfMonth(day);
+  return day;
+};
+
+// The year shown under the x-axis labels. A week belongs to the year of its Thursday (ISO)
+const bucketYear = (start: Date, view: ChartView): number =>
+  view === 'week' ? getIsoWeekYear(start) : start.getFullYear();
+
 /**
- * Turns entries into one bucket per day or per ISO week, from the first entry until today,
+ * Turns entries into one bucket per day, ISO week or month, from the first entry until today,
  * with a rolling average over the previous buckets. The average is computed over the full
  * history before the range is applied, so it is correct at the left edge of the chart too.
  */
@@ -73,24 +114,24 @@ export const buildBuckets = (
     };
   });
 
-  if (view === 'week') {
-    const weeks = new Map<number, Bucket>();
+  if (view !== 'day') {
+    const groups = new Map<number, Bucket>();
     for (const day of buckets) {
-      const monday = startOfWeek(day.start);
-      const week = weeks.get(monday.getTime()) ?? {
-        start: monday,
+      const start = bucketStart(day.start, view);
+      const group = groups.get(start.getTime()) ?? {
+        start,
         total: 0,
         average: null,
         meanC: null,
         tempSum: 0,
         tempDays: 0,
       };
-      week.total += day.total;
-      week.tempSum += day.tempSum;
-      week.tempDays += day.tempDays;
-      weeks.set(monday.getTime(), week);
+      group.total += day.total;
+      group.tempSum += day.tempSum;
+      group.tempDays += day.tempDays;
+      groups.set(start.getTime(), group);
     }
-    buckets = [...weeks.values()];
+    buckets = [...groups.values()];
   }
 
   const window = AVERAGE_WINDOW[view];
@@ -105,7 +146,7 @@ export const buildBuckets = (
   const cutoff = rangeCutoff(range);
   if (!cutoff) return buckets;
 
-  const from = view === 'week' ? startOfWeek(cutoff) : cutoff;
+  const from = bucketStart(cutoff, view);
   return buckets.filter(b => b.start >= from);
 };
 
@@ -119,7 +160,7 @@ export class ConsumptionChartManager {
   }
 
   /**
-   * Renders kg per day or per week as bars, with a rolling average as a line and, when there are
+   * Renders kg per day, week or month as bars, with a rolling average as a line and, when there are
    * temperatures, the mean outdoor temperature on a second axis.
    * Replaces any chart previously rendered on the canvas.
    */
@@ -133,26 +174,52 @@ export class ConsumptionChartManager {
 
     const buckets = buildBuckets(entries, view, range, temperatures);
     const hasTemperature = buckets.some(b => b.meanC !== null);
-    const currentWeek = startOfWeek(new Date()).getTime();
-    const window = AVERAGE_WINDOW[view];
+    const currentBucket = view === 'day' ? null : bucketStart(new Date(), view).getTime(); // the ongoing week or month
 
-    const labels = buckets.map(b =>
-      view === 'week' ? `v. ${getIsoWeek(b.start)}` : shortDate(b.start),
-    );
+    const labels = buckets.map(b => {
+      if (view === 'week') return `v. ${getIsoWeek(b.start)}`;
+      if (view === 'month') return b.start.toLocaleDateString('sv-SE', { month: 'short' });
+      return shortDate(b.start);
+    });
+
+    /**
+     * Picks which labels to show instead of Chart.js' autoSkip, so the year can go under the first
+     * label shown and under every label where a new year has begun. Counted back from the newest
+     * bucket so today always has a label. Runs again on resize, since it reads the chart width.
+     */
+    const tickLabel = (index: number, chartWidth: number): string | string[] | null => {
+      const maxTicks = Math.max(2, Math.floor(chartWidth / TICK_SPACING_PX));
+      const steps = TICK_STEPS[view];
+      const step =
+        steps.find(s => Math.ceil(buckets.length / s) <= maxTicks) ?? steps[steps.length - 1];
+      const fromEnd = buckets.length - 1 - index;
+      if (fromEnd % step !== 0) return null;
+
+      const year = bucketYear(buckets[index].start, view);
+      const previous = index - step;
+      const newYear = previous < 0 || bucketYear(buckets[previous].start, view) !== year;
+      return newYear ? [labels[index], String(year)] : labels[index];
+    };
 
     const tooltipTitle = (items: TooltipItem<'bar'>[]) => {
       const bucket = buckets[items[0].dataIndex];
+      const ongoing = bucket.start.getTime() === currentBucket ? ', pågående' : '';
       if (view === 'day') {
         return bucket.start.toLocaleDateString('sv-SE', {
           weekday: 'short',
           day: 'numeric',
           month: 'short',
+          year: 'numeric',
         });
+      }
+      if (view === 'month') {
+        const month = bucket.start.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' });
+        return ongoing ? `${month} (pågående)` : month;
       }
       const sunday = new Date(bucket.start);
       sunday.setDate(sunday.getDate() + 6);
-      const ongoing = bucket.start.getTime() === currentWeek ? ', pågående' : '';
-      return `Vecka ${getIsoWeek(bucket.start)} (${shortDate(bucket.start)} – ${shortDate(sunday)}${ongoing})`;
+      const week = `Vecka ${getIsoWeek(bucket.start)} ${getIsoWeekYear(bucket.start)}`;
+      return `${week} (${shortDate(bucket.start)} – ${shortDate(sunday)}${ongoing})`;
     };
 
     this.chartInstance = new Chart(this.canvas, {
@@ -162,7 +229,7 @@ export class ConsumptionChartManager {
         datasets: [
           {
             type: 'bar',
-            label: view === 'week' ? 'kg per vecka' : 'kg per dag',
+            label: BAR_LABEL[view],
             data: buckets.map(b => b.total),
             backgroundColor: BAR_COLOR,
             hoverBackgroundColor: '#1d4ed8', // blue-700
@@ -173,7 +240,7 @@ export class ConsumptionChartManager {
           },
           {
             type: 'line',
-            label: view === 'week' ? `Snitt ${window} veckor` : `Snitt ${window} dagar`,
+            label: AVERAGE_LABEL[view],
             data: buckets.map(b => b.average),
             borderColor: TREND_COLOR,
             backgroundColor: TREND_COLOR,
@@ -221,7 +288,14 @@ export class ConsumptionChartManager {
           x: {
             grid: { display: false },
             border: { color: GRID_COLOR },
-            ticks: { color: TEXT_COLOR, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+            ticks: {
+              color: TEXT_COLOR,
+              maxRotation: 0,
+              autoSkip: false, // tickLabel picks the labels
+              callback(_value, index) {
+                return tickLabel(index, this.chart.width);
+              },
+            },
           },
           y: {
             beginAtZero: true,

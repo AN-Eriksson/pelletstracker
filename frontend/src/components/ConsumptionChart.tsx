@@ -10,21 +10,43 @@ type Props = {
 };
 
 const VIEW_OPTIONS: Option<ChartView>[] = [
-  { value: 'week', label: 'Vecka' },
   { value: 'day', label: 'Dag' },
+  { value: 'week', label: 'Vecka' },
+  { value: 'month', label: 'Månad' },
 ];
 
 const RANGE_OPTIONS: Option<ChartRange>[] = [
   { value: '30d', label: '30 dagar' },
   { value: '3m', label: '3 mån' },
+  { value: '1y', label: '1 år' },
   { value: 'all', label: 'Allt' },
 ];
+
+// Picking a period also picks a grouping that gives a readable number of bars (about 13–60).
+// The grouping can still be changed afterwards
+const VIEW_FOR_RANGE: Record<ChartRange, ChartView> = {
+  '30d': 'day',
+  '3m': 'week',
+  '1y': 'week',
+  all: 'month',
+};
+
+const ARIA_LABEL: Record<ChartView, string> = {
+  day: 'Förbrukning i kg per dag',
+  week: 'Förbrukning i kg per vecka',
+  month: 'Förbrukning i kg per månad',
+};
 
 export default function ConsumptionChart({ entries = [], temperatures = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<ChartView>('week');
   const [range, setRange] = useState<ChartRange>('3m');
   const hasEntries = entries.length > 0;
+
+  const changeRange = (next: ChartRange) => {
+    setRange(next);
+    setView(VIEW_FOR_RANGE[next]);
+  };
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -50,7 +72,7 @@ export default function ConsumptionChart({ entries = [], temperatures = [] }: Pr
               label="Period"
               options={RANGE_OPTIONS}
               value={range}
-              onChange={setRange}
+              onChange={changeRange}
             />
           </div>
         )}
@@ -58,11 +80,7 @@ export default function ConsumptionChart({ entries = [], temperatures = [] }: Pr
 
       {hasEntries ? (
         <div className="relative h-64 sm:h-80 p-4">
-          <canvas
-            ref={canvasRef}
-            role="img"
-            aria-label={view === 'week' ? 'Förbrukning i kg per vecka' : 'Förbrukning i kg per dag'}
-          />
+          <canvas ref={canvasRef} role="img" aria-label={ARIA_LABEL[view]} />
         </div>
       ) : (
         <div className="px-4 py-6 text-sm text-gray-500">Inga poster ännu</div>
