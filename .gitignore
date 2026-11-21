@@ -42,3 +42,6 @@ out/
 
 ### Logs ###
 logs/
+
+### Local data for scripts/import_numbers_csv.py (personal data, never commit) ###
+/import/
