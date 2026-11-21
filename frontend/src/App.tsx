@@ -267,72 +267,83 @@ export default function App() {
     await loadAllEntries();
   };
 
+  // Nothing until /auth/me has answered, so neither the login screen nor the app flashes by
+  if (isLoggedIn === null) {
+    return null;
+  }
+
+  // The login screen has its own full-screen layout, without the app's header
+  if (isLoggedIn === false) {
+    return (
+      <>
+        <Toast notice={notice} onDismiss={dismissNotice} />
+        <LoginForm onLogin={handleLogin} />
+      </>
+    );
+  }
+
   return (
     // Mobile: cards straight on the page background. From sm: the whole app sits in one white card
     <div className="max-w-4xl mx-auto p-4 pb-8 sm:my-6 sm:p-6 sm:bg-white sm:rounded-lg sm:shadow-md">
       <Toast notice={notice} onDismiss={dismissNotice} />
-      <SiteHeader onLogout={isLoggedIn ? handleLogout : undefined} />
+      <SiteHeader onLogout={handleLogout} />
 
-      {isLoggedIn === false && <LoginForm onLogin={handleLogin} />}
+      <main className="space-y-4 sm:space-y-6">
+        {/* Most used first: log sacks, then the stock, this week's numbers, weather, the trend and the history */}
+        <PelletInputForm onAddEntry={addEntry} />
+        <InventoryCard
+          entries={entries}
+          deliveries={deliveries}
+          onEdit={() => setIsInventoryOpen(true)}
+        />
+        <Statistics entries={entries} />
+        <WeatherCard
+          entries={entries}
+          temperatures={temperatures}
+          settings={weatherSettings}
+          onPickStation={() => setIsStationPickerOpen(true)}
+        />
+        <ConsumptionChart entries={entries} temperatures={temperatures} />
+        <RecentInputsTable entries={entries} onEdit={openEdit} />
 
-      {isLoggedIn && (
-        <main className="space-y-4 sm:space-y-6">
-          {/* Most used first: log sacks, then the stock, this week's numbers, weather, the trend and the history */}
-          <PelletInputForm onAddEntry={addEntry} />
-          <InventoryCard
-            entries={entries}
+        {entryToEdit && (
+          <EditEntryModal
+            entry={entryToEdit}
+            onClose={closeEdit}
+            onSave={handleSave}
+            onDelete={handleDelete}
+          />
+        )}
+
+        {isStationPickerOpen && (
+          <StationPicker
+            currentStationId={weatherSettings?.stationId ?? null}
+            loadStations={loadStations}
+            onSelect={selectStation}
+            onClose={() => setIsStationPickerOpen(false)}
+          />
+        )}
+
+        {isInventoryOpen && (
+          <InventorySheet
             deliveries={deliveries}
-            onEdit={() => setIsInventoryOpen(true)}
+            onAddDelivery={addDelivery}
+            onEditDelivery={setDeliveryToEdit}
+            onClose={() => setIsInventoryOpen(false)}
           />
-          <Statistics entries={entries} />
-          <WeatherCard
-            entries={entries}
-            temperatures={temperatures}
-            settings={weatherSettings}
-            onPickStation={() => setIsStationPickerOpen(true)}
+        )}
+
+        {/* Rendered after the sheet so it opens on top of it */}
+        {deliveryToEdit && (
+          <EditEntryModal
+            entry={deliveryToEdit}
+            title="Redigera påfyllning"
+            onClose={() => setDeliveryToEdit(null)}
+            onSave={handleSaveDelivery}
+            onDelete={handleDeleteDelivery}
           />
-          <ConsumptionChart entries={entries} temperatures={temperatures} />
-          <RecentInputsTable entries={entries} onEdit={openEdit} />
-
-          {entryToEdit && (
-            <EditEntryModal
-              entry={entryToEdit}
-              onClose={closeEdit}
-              onSave={handleSave}
-              onDelete={handleDelete}
-            />
-          )}
-
-          {isStationPickerOpen && (
-            <StationPicker
-              currentStationId={weatherSettings?.stationId ?? null}
-              loadStations={loadStations}
-              onSelect={selectStation}
-              onClose={() => setIsStationPickerOpen(false)}
-            />
-          )}
-
-          {isInventoryOpen && (
-            <InventorySheet
-              deliveries={deliveries}
-              onAddDelivery={addDelivery}
-              onEditDelivery={setDeliveryToEdit}
-              onClose={() => setIsInventoryOpen(false)}
-            />
-          )}
-
-          {/* Rendered after the sheet so it opens on top of it */}
-          {deliveryToEdit && (
-            <EditEntryModal
-              entry={deliveryToEdit}
-              title="Redigera påfyllning"
-              onClose={() => setDeliveryToEdit(null)}
-              onSave={handleSaveDelivery}
-              onDelete={handleDeleteDelivery}
-            />
-          )}
-        </main>
-      )}
+        )}
+      </main>
     </div>
   );
 }

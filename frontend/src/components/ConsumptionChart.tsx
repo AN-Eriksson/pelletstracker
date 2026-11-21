@@ -3,6 +3,7 @@ import { ChartRange, ChartView, ConsumptionChartManager } from '../lib/Consumpti
 import { Entry } from '../types/Entry';
 import { DailyTemperature } from '../types/Weather';
 import SegmentedControl, { Option } from './SegmentedControl';
+import { parseLocalDate } from '../utilities/dateUtils';
 
 type Props = {
   entries?: Entry[];
@@ -37,6 +38,30 @@ const ARIA_LABEL: Record<ChartView, string> = {
   month: 'Förbrukning i kg per månad',
 };
 
+const BAR_UNIT: Record<ChartView, string> = { day: 'en dag', week: 'en vecka', month: 'en månad' };
+
+const RANGE_TEXT: Record<Exclude<ChartRange, 'all'>, string> = {
+  '30d': 'de senaste 30 dagarna',
+  '3m': 'de senaste 3 månaderna',
+  '1y': 'det senaste året',
+};
+
+// E.g. "Varje stapel är en månad, sedan sep. 2021"
+const describe = (view: ChartView, range: ChartRange, entries: Entry[]): string => {
+  let period: string;
+  if (range === 'all') {
+    const first = entries.reduce((min, e) => (e.date < min ? e.date : min), entries[0].date);
+    const since = parseLocalDate(first).toLocaleDateString('sv-SE', {
+      month: 'short',
+      year: 'numeric',
+    });
+    period = `sedan ${since}`;
+  } else {
+    period = RANGE_TEXT[range];
+  }
+  return `Varje stapel är ${BAR_UNIT[view]}, ${period}`;
+};
+
 export default function ConsumptionChart({ entries = [], temperatures = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<ChartView>('week');
@@ -59,21 +84,34 @@ export default function ConsumptionChart({ entries = [], temperatures = [] }: Pr
   return (
     <div className="bg-white rounded shadow">
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-gray-200">
-        <h2 className="text-lg font-semibold">Förbrukning</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Förbrukning</h2>
+          {hasEntries && <p className="text-sm text-gray-500">{describe(view, range, entries)}</p>}
+        </div>
         {hasEntries && (
-          <div className="flex flex-wrap gap-2">
-            <SegmentedControl
-              label="Gruppering"
-              options={VIEW_OPTIONS}
-              value={view}
-              onChange={setView}
-            />
-            <SegmentedControl
-              label="Period"
-              options={RANGE_OPTIONS}
-              value={range}
-              onChange={changeRange}
-            />
+          <div className="flex flex-wrap gap-x-3 gap-y-2">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-gray-500" aria-hidden="true">
+                En stapel per
+              </span>
+              <SegmentedControl
+                label="En stapel per"
+                options={VIEW_OPTIONS}
+                value={view}
+                onChange={setView}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-gray-500" aria-hidden="true">
+                Tidsperiod
+              </span>
+              <SegmentedControl
+                label="Tidsperiod"
+                options={RANGE_OPTIONS}
+                value={range}
+                onChange={changeRange}
+              />
+            </div>
           </div>
         )}
       </div>
