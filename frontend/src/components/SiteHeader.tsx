@@ -19,9 +19,6 @@ const SiteHeader = ({ onLogout }: Props) => {
           </button>
         )}
       </div>
-      <h1 className="mt-2 text-lg font-semibold sm:mt-4 sm:text-2xl sm:font-bold">
-        Logga och följ din pelletsförbrukning!
-      </h1>
     </header>
   );
 };
