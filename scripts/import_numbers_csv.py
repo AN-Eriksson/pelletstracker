@@ -9,9 +9,12 @@ Usage (put the CSV in import/, which git ignores):
     python3 scripts/import_numbers_csv.py import/forbrukning.csv --user <username> \
         | docker exec -i pelletstracker-postgres psql -U pelletstracker -d pelletstracker
 
-    # on the server, from the folder with compose.prod.yaml (database name and user from its .env)
-    python3 import_numbers_csv.py forbrukning.csv --user <username> --dry-run \
-        | docker compose -f compose.prod.yaml exec -T postgres psql -U <POSTGRES_USER> -d <POSTGRES_DB>
+    # on the server: copy the CSV and this script there with scp, back up the database first
+    # (pg_dump), then run from the app folder, where the deploy put compose.prod.yaml as compose.yaml.
+    # The database user and name come from the postgres container's own environment
+    cd ~/apps/pellettracker
+    python3 ~/pellet-import/import_numbers_csv.py ~/pellet-import/forbrukning.csv --user <username> --dry-run \
+        | docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 
 - Rows without an amount or with 0 (days nothing was used) are skipped; rows whose first cell is not a date
   (header, title) are skipped too.
