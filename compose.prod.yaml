@@ -18,6 +18,9 @@ services:
   postgres:
     image: postgres:17
     restart: unless-stopped
+    # Only on the server's localhost, for an SSH tunnel (e.g. DBeaver); not reachable from outside
+    ports:
+      - "127.0.0.1:5433:5432"
     environment:
       POSTGRES_DB: "${POSTGRES_DB}"
       POSTGRES_USER: "${POSTGRES_USER}"
