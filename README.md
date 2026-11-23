@@ -121,6 +121,7 @@ All `/api/**` endpoints require a logged-in session and only operate on the curr
 | `PUT` | `/api/pellets/{id}` | Update an entry (409 if another entry already has the new date) |
 | `DELETE` | `/api/pellets/{id}` | Delete an entry |
 | `GET` | `/api/pellets/count` | Number of entries |
+| `GET` | `/api/pellets/export.csv` | All consumption as CSV, in the import format (see [Exporting](#exporting)) |
 | `GET` | `/api/pellets/weeks/{year}/{week}/total` | Total kg for an ISO week |
 | `GET` | `/api/deliveries` | All deliveries |
 | `POST` | `/api/deliveries` | Add a delivery `{ date, amountKg }`; several per date are allowed |
@@ -148,6 +149,10 @@ python3 scripts/import_numbers_csv.py import/log.csv --user <username> --dry-run
 On the server, copy the CSV and the script there with `scp` and run the same commands from the app folder. Take a backup first (`pg_dump`). After importing old data, pick the weather station again so temperatures are fetched from the first entry.
 
 `--user` is the app's username. For a GitHub user it is the GitHub username at the first login, with `-2` etc. if it was taken.
+
+## Exporting
+
+"Exportera CSV" above the latest consumption downloads all of the user's consumption (`GET /api/pellets/export.csv`) in the format the import reads: no header, `;` as separator, CRLF, one line per day from the first entry until today, sacks with a decimal comma (`0,5`) and an empty cell on days without an entry. It opens in Numbers with Swedish settings, and the import script reads it back unchanged. Deliveries are not included.
 
 ### Moving data from a password account to a GitHub account
 

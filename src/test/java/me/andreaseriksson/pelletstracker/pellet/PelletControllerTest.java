@@ -101,6 +101,23 @@ class PelletControllerTest {
         verify(pelletRepository, times(1)).save(editing);
     }
 
+    @Test
+    void exportCsv_shouldReturnOnlyTheCurrentUsersEntriesAsAttachment() {
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Europe/Stockholm"));
+        when(authentication.getName()).thenReturn("testuser");
+        when(appUserRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(pelletRepository.findByUser(testUser)).thenReturn(java.util.List.of(new PelletEntry(today, 24)));
+
+        var response = controller.exportCsv(authentication);
+
+        assertEquals(200, response.getStatusCode().value());
+        assertEquals("text/csv;charset=UTF-8", response.getHeaders().getContentType().toString());
+        assertEquals("attachment; filename=\"pelletstracker-forbrukning-" + today + ".csv\"",
+                response.getHeaders().getFirst("Content-Disposition"));
+        assertEquals(today + ";1,5\r\n", response.getBody());
+        verify(pelletRepository).findByUser(testUser);
+    }
+
     private static PelletEntry entryWithId(Long id, LocalDate date, int amountKg) {
         PelletEntry entry = new PelletEntry(date, amountKg);
         ReflectionTestUtils.setField(entry, "id", id);

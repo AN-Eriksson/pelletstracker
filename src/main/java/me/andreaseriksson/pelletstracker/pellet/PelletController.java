@@ -6,11 +6,17 @@ import me.andreaseriksson.pelletstracker.exception.ConflictException;
 import me.andreaseriksson.pelletstracker.exception.ResourceNotFoundException;
 import me.andreaseriksson.pelletstracker.user.AppUser;
 import me.andreaseriksson.pelletstracker.user.AppUserRepository;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.IsoFields;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +37,9 @@ public class PelletController {
      * Logger for logging informational and error messages within the PelletController.
      */
     private static final Logger logger = LoggerFactory.getLogger(PelletController.class);
+
+    /** "Today" for the export: the users are in Sweden, while the server may run in UTC */
+    private static final ZoneId EXPORT_ZONE = ZoneId.of("Europe/Stockholm");
 
     /**
      * Repository for accessing and managing pellet data.
@@ -71,6 +80,28 @@ public class PelletController {
     ApiResponse<List<PelletEntry>> findAll(Authentication authentication) {
         AppUser currentUser = getCurrentUser(authentication);
         return new ApiResponse<>("success", "All pellet entries", this.pelletRepository.findByUser(currentUser));
+    }
+
+    /**
+     * Downloads the authenticated user's consumption as CSV, in the format it was imported from
+     * (see {@link ConsumptionCsvWriter}).
+     *
+     * @param authentication the current authenticated user
+     * @return the CSV as an attachment; an empty file if the user has no entries
+     */
+    @GetMapping("/export.csv")
+    ResponseEntity<String> exportCsv(Authentication authentication) {
+        AppUser currentUser = getCurrentUser(authentication);
+        LocalDate today = LocalDate.now(EXPORT_ZONE);
+        String csv = ConsumptionCsvWriter.write(pelletRepository.findByUser(currentUser), today);
+
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("pelletstracker-forbrukning-" + today + ".csv")
+                        .build()
+                        .toString())
+                .body(csv);
     }
 
     /**

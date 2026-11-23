@@ -10,6 +10,9 @@ interface Props {
 
 const MAX_ROWS = 5;
 
+/** All consumption, in the CSV format scripts/import_numbers_csv.py reads */
+const CSV_EXPORT_URL = '/api/pellets/export.csv';
+
 export default function RecentInputsTable({ entries = [], onEdit }: Props) {
   const formatDate = (dateVal?: string | Date): string => {
     if (!dateVal) {
@@ -31,9 +34,19 @@ export default function RecentInputsTable({ entries = [], onEdit }: Props) {
 
   return (
     <div className="bg-white rounded shadow overflow-hidden">
-      <h2 className="px-4 py-3 text-lg font-semibold border-b border-gray-200">
-        Senaste förbrukning
-      </h2>
+      <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-3">
+        <h2 className="text-lg font-semibold">Senaste förbrukning</h2>
+        {entries.length > 0 && (
+          // A plain link: the browser downloads the file and sends the session cookie itself
+          <a
+            href={CSV_EXPORT_URL}
+            download
+            className="-my-2 flex min-h-11 items-center text-sm font-medium text-blue-700 hover:underline"
+          >
+            Exportera CSV
+          </a>
+        )}
+      </div>
 
       {entries.length === 0 ? (
         <div className="px-4 py-6 text-sm text-gray-500">Inga poster ännu</div>
