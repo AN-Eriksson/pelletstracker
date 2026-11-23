@@ -13,6 +13,10 @@ const backendProxy = {
   },
 };
 
+// GitHub login (Spring's oauth2Login). Host kept as localhost:5173, since Spring builds the callback URL
+// sent to GitHub from it, and the dev OAuth app on GitHub is registered for http://localhost:5173
+const oauthProxy = { ...backendProxy, changeOrigin: false };
+
 export default defineConfig({
   build: {
     outDir: '../src/main/resources/static', // Write build ouput to be served by Spring Boot
@@ -29,6 +33,8 @@ export default defineConfig({
     proxy: {
       '/api': backendProxy,
       '/auth': backendProxy,
+      '/oauth2': oauthProxy,
+      '/login/oauth2': oauthProxy,
     },
   },
 });

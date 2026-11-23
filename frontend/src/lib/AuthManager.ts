@@ -1,27 +1,42 @@
 import { csrfHeader } from './csrf';
+import { CurrentUser, LoginOptions } from '../types/Auth';
+
+/** Where the "Logga in med GitHub" link goes; Spring sends the browser on to GitHub from there */
+export const GITHUB_LOGIN_URL = '/oauth2/authorization/github';
 
 /**
  * Login state lives in an HttpOnly session cookie that scripts cannot read, so the backend is asked
  * (GET /auth/me) instead of checking a stored token.
  */
 export class AuthManager {
-  private onAuthChange?: (loggedIn: boolean) => void;
+  private onAuthChange?: (user: CurrentUser | null) => void;
 
-  setOnAuthChange(callback?: (loggedIn: boolean) => void) {
+  /** Called with the user after a login, and with null after logout or an expired session */
+  setOnAuthChange(callback?: (user: CurrentUser | null) => void) {
     this.onAuthChange = callback;
   }
 
-  private emitAuthChange(value: boolean) {
-    this.onAuthChange?.(value);
+  private emitAuthChange(user: CurrentUser | null) {
+    this.onAuthChange?.(user);
   }
 
-  /** Whether the session cookie belongs to a logged-in session. Also hands out the CSRF cookie. */
-  async checkSession(): Promise<boolean> {
+  /** The user the session cookie is logged in as, or null. Also hands out the CSRF cookie. */
+  async checkSession(): Promise<CurrentUser | null> {
     try {
       const response = await fetch('/auth/me', { headers: { Accept: 'application/json' } });
-      return response.ok;
+      return response.ok ? ((await response.json()) as CurrentUser) : null;
     } catch {
-      return false; // backend unreachable: show the login form
+      return null; // backend unreachable: show the login form
+    }
+  }
+
+  /** Which login buttons and fields to show; null if the server could not be reached */
+  async loginOptions(): Promise<LoginOptions | null> {
+    try {
+      const response = await fetch('/auth/config', { headers: { Accept: 'application/json' } });
+      return response.ok ? ((await response.json()) as LoginOptions) : null;
+    } catch {
+      return null;
     }
   }
 
@@ -55,7 +70,7 @@ export class AuthManager {
       throw new Error(`Inloggningen misslyckades (${response.status}). Försök igen.`);
     }
 
-    this.emitAuthChange(true);
+    this.emitAuthChange((await response.json()) as CurrentUser);
   }
 
   /**
@@ -76,11 +91,11 @@ export class AuthManager {
         status: response.status,
       });
     }
-    this.emitAuthChange(false);
+    this.emitAuthChange(null);
   }
 
   /** The backend already says the session is gone (401): only update the UI. */
   sessionExpired() {
-    this.emitAuthChange(false);
+    this.emitAuthChange(null);
   }
 }

@@ -25,6 +25,8 @@ dependencies {
     implementation 'org.flywaydb:flyway-core'
     runtimeOnly 'org.flywaydb:flyway-database-postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Log in with GitHub
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     // Sessions stored in Postgres, so logins survive restarts and deploys
     implementation 'org.springframework.session:spring-session-jdbc'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
