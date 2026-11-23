@@ -12,6 +12,7 @@ import StationPicker from './components/StationPicker';
 import { Entry } from './types/Entry';
 import { Delivery } from './types/Delivery';
 import { DailyTemperature, WeatherSettings, WeatherStation } from './types/Weather';
+import { CurrentUser, LoginOptions } from './types/Auth';
 import { AuthManager } from './lib/AuthManager';
 import { ApiClient } from './lib/ApiClient';
 import LoginForm from './components/LoginForm';
@@ -19,6 +20,29 @@ import Toast, { Notice } from './components/Toast';
 import { errorMessage, errorStatus } from './lib/errors';
 
 const authManager = new AuthManager();
+
+// The backend sends a failed GitHub login back to /?login=<reason> (GitHubLoginFailureHandler)
+const GITHUB_LOGIN_ERRORS: Record<string, string> = {
+  avbruten: 'Inloggningen med GitHub avbröts.',
+  fullt: 'Det går inte att skapa nya konton just nu. Försök igen senare.',
+  fel: 'Inloggningen med GitHub misslyckades. Försök igen.',
+};
+
+/** Reads ?login=… once and removes it, so a reload does not show the message again */
+function takeGitHubLoginError(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const reason = params.get('login');
+  if (reason === null) {
+    return null;
+  }
+  params.delete('login');
+  const query = params.toString();
+  window.history.replaceState(null, '', window.location.pathname + (query ? `?${query}` : ''));
+  return GITHUB_LOGIN_ERRORS[reason] ?? GITHUB_LOGIN_ERRORS.fel;
+}
+
+// Once, when the page loads (not in a useState initializer, which StrictMode runs twice)
+const gitHubLoginError = takeGitHubLoginError();
 
 export default function App() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -29,12 +53,22 @@ export default function App() {
   const [weatherSettings, setWeatherSettings] = useState<WeatherSettings | null>(null);
   const [temperatures, setTemperatures] = useState<DailyTemperature[]>([]);
   const [isStationPickerOpen, setIsStationPickerOpen] = useState(false);
-  // null until the backend has answered whether the session cookie is still logged in
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  // undefined until the backend has answered whether the session cookie is still logged in
+  const [user, setUser] = useState<CurrentUser | null | undefined>(undefined);
+  const isLoggedIn = user === undefined ? null : user !== null;
+  const [loginOptions, setLoginOptions] = useState<LoginOptions | null>(null);
+  // Shown on the login screen until someone logs in, not again after a later logout
+  const [loginError, setLoginError] = useState(gitHubLoginError);
 
   useEffect(() => {
-    authManager.setOnAuthChange(setIsLoggedIn);
-    authManager.checkSession().then(setIsLoggedIn);
+    authManager.setOnAuthChange(setUser);
+    // Both before the first render, so the login screen does not change shape after it appears
+    Promise.all([authManager.checkSession(), authManager.loginOptions()]).then(
+      ([currentUser, options]) => {
+        setLoginOptions(options);
+        setUser(currentUser);
+      },
+    );
     return () => {
       authManager.setOnAuthChange(undefined);
     };
@@ -175,6 +209,7 @@ export default function App() {
   // Load everything once logged in, drop it again on logout or when the session ends
   useEffect(() => {
     if (isLoggedIn) {
+      setLoginError(null);
       loadEverything();
     } else if (isLoggedIn === false) {
       clearUserData();
@@ -277,7 +312,7 @@ export default function App() {
     return (
       <>
         <Toast notice={notice} onDismiss={dismissNotice} />
-        <LoginForm onLogin={handleLogin} />
+        <LoginForm onLogin={handleLogin} options={loginOptions} initialError={loginError} />
       </>
     );
   }
@@ -286,7 +321,7 @@ export default function App() {
     // Mobile: cards straight on the page background. From sm: the whole app sits in one white card
     <div className="max-w-4xl mx-auto p-4 pb-8 sm:my-6 sm:p-6 sm:bg-white sm:rounded-lg sm:shadow-md">
       <Toast notice={notice} onDismiss={dismissNotice} />
-      <SiteHeader onLogout={handleLogout} />
+      <SiteHeader displayName={user?.displayName} onLogout={handleLogout} />
 
       <main className="space-y-4 sm:space-y-6">
         {/* Most used first: log sacks, then the stock, this week's numbers, weather, the trend and the history */}

@@ -1,6 +1,8 @@
 package me.andreaseriksson.pelletstracker.security;
 
 import jakarta.servlet.DispatcherType;
+import me.andreaseriksson.pelletstracker.user.AppUserRepository;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,8 +14,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.savedrequest.NullRequestCache;
@@ -25,6 +27,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -35,7 +38,9 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http,
-                                                   SecurityContextRepository securityContextRepository) throws Exception {
+                                                   SecurityContextRepository securityContextRepository,
+                                                   ObjectProvider<GitHubUserService> gitHubUserService)
+            throws Exception {
         http
                 .cors(withDefaults())
                 // The SPA reads the XSRF-TOKEN cookie and sends it back as the X-XSRF-TOKEN header on every
@@ -48,7 +53,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         // Error pages (e.g. the 403 for a missing CSRF token) must not turn into 401
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()    // reach login
+                        // Reach login; answers 404 itself when PASSWORD_LOGIN_ENABLED is off
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/config").permitAll()
                         .requestMatchers("/auth/me").authenticated()
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()     // static SPA assets
@@ -66,12 +73,31 @@ public class SecurityConfig {
                 // Not logged in on a protected path: 401 for the SPA instead of a redirect or 403
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+
+        // Log in with GitHub, when GitHubLoginConfig is active (GITHUB_CLIENT_ID set). The SPA's button links
+        // to /oauth2/authorization/github; GitHub sends the user back to /login/oauth2/code/github, where
+        // the login is saved in the session through the repository above, with a new session id
+        GitHubUserService gitHub = gitHubUserService.getIfAvailable();
+        if (gitHub != null) {
+            http.oauth2Login(oauth -> oauth
+                    .loginPage("/")     // the SPA's login screen, not Spring's generated page
+                    // A session that only holds a started login lives 10 minutes, not SESSION_TIMEOUT
+                    .authorizationEndpoint(endpoint -> endpoint
+                            .authorizationRequestRepository(new ShortLivedAuthorizationRequestRepository()))
+                    .userInfoEndpoint(userInfo -> userInfo.userService(gitHub))
+                    .authorizedClientRepository(new DiscardingAuthorizedClientRepository())
+                    .successHandler(new SimpleUrlAuthenticationSuccessHandler("/"))
+                    .failureHandler(new GitHubLoginFailureHandler()));
+        }
         return http.build();
     }
 
     @Bean
-    SecurityContextRepository securityContextRepository(UserDetailsService userDetailsService) {
-        return new UsernameSessionSecurityContextRepository(userDetailsService);
+    SecurityContextRepository securityContextRepository(
+            AppUserRepository appUserRepository,
+            // The same setting Spring Session uses for new sessions (SESSION_TIMEOUT)
+            @Value("${spring.session.timeout:30d}") Duration sessionTimeout) {
+        return new UserIdSessionSecurityContextRepository(appUserRepository, sessionTimeout);
     }
 
     @Bean
